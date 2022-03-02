@@ -1,5 +1,26 @@
-(lang dune 2.9)
+(lang dune 3.0)
 (name Game)
+(sections (lib .) (libexec .) (bin ../../bin))
+(files
+ (lib
+  (META
+   dune-package
+   game.a
+   game.cma
+   game.cmi
+   game.cmt
+   game.cmx
+   game.cmxa
+   game.ml
+   game__Valid_solution_checker.cmi
+   game__Valid_solution_checker.cmt
+   game__Valid_solution_checker.cmti
+   game__Valid_solution_checker.cmx
+   opam
+   valid_solution_checker.ml
+   valid_solution_checker.mli))
+ (libexec (game.cmxs))
+ (bin (game)))
 (library
  (name Game)
  (kind normal)
@@ -11,6 +32,12 @@
  (modules
   (wrapped
    (main_module_name Game)
+   (modules
+    ((name Valid_solution_checker)
+     (obj_name game__Valid_solution_checker)
+     (visibility public)
+     (impl)
+     (intf)))
    (alias_module
     (name Game)
     (obj_name game)

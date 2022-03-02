@@ -1,0 +1,2 @@
+(** @canonical Game.Valid_solution_checker *)
+module Valid_solution_checker = Game__Valid_solution_checker

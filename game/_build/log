@@ -1,84 +1,88 @@
 # dune build
 # OCAMLPARAM: unset
-# Workspace root: /home/jasong/cs3110/24-battle-royale/game
-$ /usr/bin/nproc > /tmp/duneb3097e.output 2> /dev/null
-# Auto-detected concurrency: 2
-# disable binary cache
-$ /home/jasong/.opam/cs3110/bin/ocamlc.opt -config > /tmp/dunef4bf59.output
+# Shared cache: disabled
+# Workspace root: /Users/darrenkey/Documents/24-battle-royale/game
+# Auto-detected concurrency: 8
+$ /Users/darrenkey/.opam/cs3110-2021fa/bin/ocamlc.opt -config > /var/folders/lr/tjkcm2yn53b8qx3wbm59lb940000gn/T/dune_4a05f4_output
 # Dune context:
 #  { name = "default"
 #  ; kind = "default"
-#  ; profile = Dyn
+#  ; profile = Dev
 #  ; merlin = true
 #  ; for_host = None
 #  ; fdo_target_exe = None
 #  ; build_dir = "default"
-#  ; toplevel_path = Some External "/home/jasong/.opam/cs3110/lib/toplevel"
-#  ; ocaml_bin = External "/home/jasong/.opam/cs3110/bin"
-#  ; ocaml = Ok External "/home/jasong/.opam/cs3110/bin/ocaml"
-#  ; ocamlc = External "/home/jasong/.opam/cs3110/bin/ocamlc.opt"
-#  ; ocamlopt = Ok External "/home/jasong/.opam/cs3110/bin/ocamlopt.opt"
-#  ; ocamldep = Ok External "/home/jasong/.opam/cs3110/bin/ocamldep.opt"
-#  ; ocamlmklib = Ok External "/home/jasong/.opam/cs3110/bin/ocamlmklib.opt"
+#  ; toplevel_path =
+#      Some External "/Users/darrenkey/.opam/cs3110-2021fa/lib/toplevel"
+#  ; ocaml_bin = External "/Users/darrenkey/.opam/cs3110-2021fa/bin"
+#  ; ocaml = Ok External "/Users/darrenkey/.opam/cs3110-2021fa/bin/ocaml"
+#  ; ocamlc = External "/Users/darrenkey/.opam/cs3110-2021fa/bin/ocamlc.opt"
+#  ; ocamlopt =
+#      Ok External "/Users/darrenkey/.opam/cs3110-2021fa/bin/ocamlopt.opt"
+#  ; ocamldep =
+#      Ok External "/Users/darrenkey/.opam/cs3110-2021fa/bin/ocamldep.opt"
+#  ; ocamlmklib =
+#      Ok External "/Users/darrenkey/.opam/cs3110-2021fa/bin/ocamlmklib.opt"
 #  ; env =
 #      map
-#        { "DUNE_OCAML_HARDCODED" : "/home/jasong/.opam/cs3110/lib"
-#        ; "DUNE_OCAML_STDLIB" : "/home/jasong/.opam/cs3110/lib/ocaml"
-#        ; "DUNE_SOURCEROOT" : "/home/jasong/cs3110/24-battle-royale/game"
+#        { "DUNE_OCAML_HARDCODED" : "/Users/darrenkey/.opam/cs3110-2021fa/lib"
+#        ; "DUNE_OCAML_STDLIB" :
+#            "/Users/darrenkey/.opam/cs3110-2021fa/lib/ocaml"
+#        ; "DUNE_SOURCEROOT" :
+#            "/Users/darrenkey/Documents/24-battle-royale/game"
 #        ; "INSIDE_DUNE" :
-#            "/home/jasong/cs3110/24-battle-royale/game/_build/default"
+#            "/Users/darrenkey/Documents/24-battle-royale/game/_build/default"
 #        ; "OCAMLFIND_IGNORE_DUPS_IN" :
-#            "/home/jasong/cs3110/24-battle-royale/game/_build/install/default/lib"
+#            "/Users/darrenkey/Documents/24-battle-royale/game/_build/install/default/lib"
 #        ; "OCAMLPATH" :
-#            "/home/jasong/cs3110/24-battle-royale/game/_build/install/default/lib"
+#            "/Users/darrenkey/Documents/24-battle-royale/game/_build/install/default/lib"
 #        ; "OCAMLTOP_INCLUDE_PATH" :
-#            "/home/jasong/cs3110/24-battle-royale/game/_build/install/default/lib/toplevel"
+#            "/Users/darrenkey/Documents/24-battle-royale/game/_build/install/default/lib/toplevel"
 #        ; "OCAML_COLOR" : "always"
 #        ; "OPAMCOLOR" : "always"
 #        }
-#  ; findlib_path = [ External "/home/jasong/.opam/cs3110/lib" ]
+#  ; findlib_path = [ External "/Users/darrenkey/.opam/cs3110-2021fa/lib" ]
 #  ; arch_sixtyfour = true
 #  ; natdynlink_supported = true
 #  ; supports_shared_libraries = true
 #  ; ocaml_config =
 #      { version = "4.12.0"
-#      ; standard_library_default = "/home/jasong/.opam/cs3110/lib/ocaml"
-#      ; standard_library = "/home/jasong/.opam/cs3110/lib/ocaml"
+#      ; standard_library_default =
+#          "/Users/darrenkey/.opam/cs3110-2021fa/lib/ocaml"
+#      ; standard_library = "/Users/darrenkey/.opam/cs3110-2021fa/lib/ocaml"
 #      ; standard_runtime = "the_standard_runtime_variable_was_deleted"
 #      ; ccomp_type = "cc"
-#      ; c_compiler = "gcc"
-#      ; ocamlc_cflags = [ "-O2"; "-fno-strict-aliasing"; "-fwrapv"; "-fPIC" ]
+#      ; c_compiler = "cc"
+#      ; ocamlc_cflags = [ "-O2"; "-fno-strict-aliasing"; "-fwrapv" ]
 #      ; ocamlc_cppflags = [ "-D_FILE_OFFSET_BITS=64"; "-D_REENTRANT" ]
-#      ; ocamlopt_cflags =
-#          [ "-O2"; "-fno-strict-aliasing"; "-fwrapv"; "-fPIC" ]
+#      ; ocamlopt_cflags = [ "-O2"; "-fno-strict-aliasing"; "-fwrapv" ]
 #      ; ocamlopt_cppflags = [ "-D_FILE_OFFSET_BITS=64"; "-D_REENTRANT" ]
 #      ; bytecomp_c_compiler =
-#          [ "gcc"
+#          [ "cc"
 #          ; "-O2"
 #          ; "-fno-strict-aliasing"
 #          ; "-fwrapv"
-#          ; "-fPIC"
 #          ; "-D_FILE_OFFSET_BITS=64"
 #          ; "-D_REENTRANT"
 #          ]
-#      ; bytecomp_c_libraries = [ "-lm"; "-ldl"; "-lpthread" ]
+#      ; bytecomp_c_libraries = [ "-lm"; "-lpthread" ]
 #      ; native_c_compiler =
-#          [ "gcc"
+#          [ "cc"
 #          ; "-O2"
 #          ; "-fno-strict-aliasing"
 #          ; "-fwrapv"
-#          ; "-fPIC"
 #          ; "-D_FILE_OFFSET_BITS=64"
 #          ; "-D_REENTRANT"
 #          ]
-#      ; native_c_libraries = [ "-lm"; "-ldl" ]
+#      ; native_c_libraries = [ "-lm" ]
+#      ; native_pack_linker = [ "ld"; "-r"; "-o" ]
 #      ; cc_profile = []
-#      ; architecture = "amd64"
+#      ; architecture = "arm64"
 #      ; model = "default"
 #      ; int_size = 63
 #      ; word_size = 64
-#      ; system = "linux"
-#      ; asm = [ "as" ]
+#      ; system = "macosx"
+#      ; asm = [ "clang"; "-c"; "-Wno-trigraphs" ]
 #      ; asm_cfi_supported = true
 #      ; with_frame_pointers = false
 #      ; ext_exe = ""
@@ -89,8 +93,8 @@ $ /home/jasong/.opam/cs3110/bin/ocamlc.opt -config > /tmp/dunef4bf59.output
 #      ; os_type = "Unix"
 #      ; default_executable_name = "a.out"
 #      ; systhread_supported = true
-#      ; host = "x86_64-pc-linux-gnu"
-#      ; target = "x86_64-pc-linux-gnu"
+#      ; host = "aarch64-apple-darwin20.5.0"
+#      ; target = "aarch64-apple-darwin20.5.0"
 #      ; profiling = false
 #      ; flambda = false
 #      ; spacetime = false
@@ -110,14 +114,74 @@ $ /home/jasong/.opam/cs3110/bin/ocamlc.opt -config > /tmp/dunef4bf59.output
 #      ; windows_unicode = false
 #      }
 #  }
-$ (cd _build/default && /home/jasong/.opam/cs3110/bin/ocamlc.opt -w @1..3@5..28@30..39@43@46..47@49..57@61..62-40 -strict-sequence -strict-formats -short-paths -keep-locs -w -49 -nopervasives -nostdlib -g -bin-annot -I lib/.game.objs/byte -no-alias-deps -opaque -o lib/.game.objs/byte/game.cmo -c -impl lib/game.ml-gen)
-$ (cd _build/default && /home/jasong/.opam/cs3110/bin/ocamlopt.opt -w @1..3@5..28@30..39@43@46..47@49..57@61..62-40 -strict-sequence -strict-formats -short-paths -keep-locs -w -49 -nopervasives -nostdlib -g -I lib/.game.objs/byte -I lib/.game.objs/native -intf-suffix .ml-gen -no-alias-deps -opaque -o lib/.game.objs/native/game.cmx -c -impl lib/game.ml-gen)
-$ (cd _build/default && /home/jasong/.opam/cs3110/bin/ocamlc.opt -w @1..3@5..28@30..39@43@46..47@49..57@61..62-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -a -o lib/game.cma lib/.game.objs/byte/game.cmo)
-$ (cd _build/default && /home/jasong/.opam/cs3110/bin/ocamlc.opt -w @1..3@5..28@30..39@43@46..47@49..57@61..62-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -bin-annot -I test/.game.eobjs/byte -I /home/jasong/.opam/cs3110/lib/bytes -I /home/jasong/.opam/cs3110/lib/ounit2 -I /home/jasong/.opam/cs3110/lib/ounit2/advanced -I /home/jasong/.opam/cs3110/lib/seq -I /home/jasong/.opam/cs3110/lib/stdlib-shims -I lib/.game.objs/byte -no-alias-deps -opaque -o test/.game.eobjs/byte/dune__exe__Game.cmo -c -impl test/game.ml)
+$ (cd _build/default && /Users/darrenkey/.opam/cs3110-2021fa/bin/ocamlc.opt -w @1..3@5..28@30..39@43@46..47@49..57@61..62-40 -strict-sequence -strict-formats -short-paths -keep-locs -w -49 -nopervasives -nostdlib -g -bin-annot -I lib/.game.objs/byte -no-alias-deps -opaque -o lib/.game.objs/byte/game.cmo -c -impl lib/game.ml-gen)
+$ (cd _build/default && /Users/darrenkey/.opam/cs3110-2021fa/bin/ocamldep.opt -modules -impl lib/valid_solution_checker.ml) > _build/default/lib/.game.objs/valid_solution_checker.ml.d
+$ (cd _build/default && /Users/darrenkey/.opam/cs3110-2021fa/bin/ocamldep.opt -modules -intf lib/valid_solution_checker.mli) > _build/default/lib/.game.objs/valid_solution_checker.mli.d
+$ (cd _build/default && /Users/darrenkey/.opam/cs3110-2021fa/bin/ocamlc.opt -w @1..3@5..28@30..39@43@46..47@49..57@61..62-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -bin-annot -I lib/.game.objs/byte -no-alias-deps -opaque -open Game -o lib/.game.objs/byte/game__Valid_solution_checker.cmi -c -intf lib/valid_solution_checker.mli)
+$ (cd _build/default && /Users/darrenkey/.opam/cs3110-2021fa/bin/ocamlc.opt -w @1..3@5..28@30..39@43@46..47@49..57@61..62-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -bin-annot -I lib/.game.objs/byte -intf-suffix .ml -no-alias-deps -opaque -open Game -o lib/.game.objs/byte/game__Valid_solution_checker.cmo -c -impl lib/valid_solution_checker.ml)
+> File "lib/valid_solution_checker.ml", line 1:
+> Error: The implementation lib/valid_solution_checker.ml
+>        does not match the interface lib/.game.objs/byte/game__Valid_solution_checker.cmi:
+>        The value `check_expression_tree' is required but not provided
+>        File "lib/valid_solution_checker.mli", line 43, characters 0-40:
+>          Expected declaration
+>        The value `expression_tree_creator' is required but not provided
+>        File "lib/valid_solution_checker.mli", line 39, characters 0-44:
+>          Expected declaration
+>        The value `check_solution_valid' is required but not provided
+>        File "lib/valid_solution_checker.mli", line 35, characters 0-66:
+>          Expected declaration
+>        The value `check_all_nums_used_once' is required but not provided
+>        File "lib/valid_solution_checker.mli", line 30, characters 0-70:
+>          Expected declaration
+>        The value `check_valid_operations' is required but not provided
+>        File "lib/valid_solution_checker.mli", line 26, characters 0-43:
+>          Expected declaration
+>        The value `check_valid_paren' is required but not provided
+>        File "lib/valid_solution_checker.mli", line 22, characters 0-38:
+>          Expected declaration
+>        The value `check_valid_char' is required but not provided
+>        File "lib/valid_solution_checker.mli", line 15, characters 0-37:
+>          Expected declaration
+>        The type `tree' is required but not provided
+>        File "lib/valid_solution_checker.mli", line 7, characters 0-9:
+>          Expected declaration
+[2]
+$ (cd _build/default && /Users/darrenkey/.opam/cs3110-2021fa/bin/ocamlc.opt -w @1..3@5..28@30..39@43@46..47@49..57@61..62-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -bin-annot -I bin/.main.eobjs/byte -I lib/.game.objs/byte -no-alias-deps -opaque -o bin/.main.eobjs/byte/dune__exe__Main.cmo -c -impl bin/main.ml)
+$ (cd _build/default && /Users/darrenkey/.opam/cs3110-2021fa/bin/ocamlc.opt -w @1..3@5..28@30..39@43@46..47@49..57@61..62-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -bin-annot -I test/.game.eobjs/byte -I /Users/darrenkey/.opam/cs3110-2021fa/lib/ounit2 -I /Users/darrenkey/.opam/cs3110-2021fa/lib/ounit2/advanced -I /Users/darrenkey/.opam/cs3110-2021fa/lib/seq -I /Users/darrenkey/.opam/cs3110-2021fa/lib/stdlib-shims -I lib/.game.objs/byte -no-alias-deps -opaque -o test/.game.eobjs/byte/dune__exe__Game.cmo -c -impl test/game.ml)
 > File "test/game.ml", line 2, characters 0-9:
 > 2 | open Game
 >     ^^^^^^^^^
 > Error (warning 33 [unused-open]): unused open Game.
 [2]
-$ (cd _build/default && /home/jasong/.opam/cs3110/bin/ocamlopt.opt -w @1..3@5..28@30..39@43@46..47@49..57@61..62-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -a -o lib/game.cmxa lib/.game.objs/native/game.cmx)
-$ (cd _build/default && /home/jasong/.opam/cs3110/bin/ocamlopt.opt -w @1..3@5..28@30..39@43@46..47@49..57@61..62-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -shared -linkall -I lib -o lib/game.cmxs lib/game.cmxa)
+$ (cd _build/default && /Users/darrenkey/.opam/cs3110-2021fa/bin/ocamlopt.opt -w @1..3@5..28@30..39@43@46..47@49..57@61..62-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -I lib/.game.objs/byte -I lib/.game.objs/native -intf-suffix .ml -no-alias-deps -opaque -open Game -o lib/.game.objs/native/game__Valid_solution_checker.cmx -c -impl lib/valid_solution_checker.ml)
+> File "lib/valid_solution_checker.ml", line 1:
+> Error: The implementation lib/valid_solution_checker.ml
+>        does not match the interface lib/.game.objs/byte/game__Valid_solution_checker.cmi:
+>        The value `check_expression_tree' is required but not provided
+>        File "lib/valid_solution_checker.mli", line 43, characters 0-40:
+>          Expected declaration
+>        The value `expression_tree_creator' is required but not provided
+>        File "lib/valid_solution_checker.mli", line 39, characters 0-44:
+>          Expected declaration
+>        The value `check_solution_valid' is required but not provided
+>        File "lib/valid_solution_checker.mli", line 35, characters 0-66:
+>          Expected declaration
+>        The value `check_all_nums_used_once' is required but not provided
+>        File "lib/valid_solution_checker.mli", line 30, characters 0-70:
+>          Expected declaration
+>        The value `check_valid_operations' is required but not provided
+>        File "lib/valid_solution_checker.mli", line 26, characters 0-43:
+>          Expected declaration
+>        The value `check_valid_paren' is required but not provided
+>        File "lib/valid_solution_checker.mli", line 22, characters 0-38:
+>          Expected declaration
+>        The value `check_valid_char' is required but not provided
+>        File "lib/valid_solution_checker.mli", line 15, characters 0-37:
+>          Expected declaration
+>        The type `tree' is required but not provided
+>        File "lib/valid_solution_checker.mli", line 7, characters 0-9:
+>          Expected declaration
+[2]
+$ (cd _build/default && /Users/darrenkey/.opam/cs3110-2021fa/bin/ocamlopt.opt -w @1..3@5..28@30..39@43@46..47@49..57@61..62-40 -strict-sequence -strict-formats -short-paths -keep-locs -w -49 -nopervasives -nostdlib -g -I lib/.game.objs/byte -I lib/.game.objs/native -intf-suffix .ml-gen -no-alias-deps -opaque -o lib/.game.objs/native/game.cmx -c -impl lib/game.ml-gen)
+$ (cd _build/default && /Users/darrenkey/.opam/cs3110-2021fa/bin/ocamlopt.opt -w @1..3@5..28@30..39@43@46..47@49..57@61..62-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -I bin/.main.eobjs/byte -I bin/.main.eobjs/native -I lib/.game.objs/byte -I lib/.game.objs/native -intf-suffix .ml -no-alias-deps -opaque -o bin/.main.eobjs/native/dune__exe__Main.cmx -c -impl bin/main.ml)
