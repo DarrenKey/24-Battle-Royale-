@@ -7,3 +7,4 @@ type operator =
 type tree = 
 | Leaf of int
 | Node of operator * tree * tree
+

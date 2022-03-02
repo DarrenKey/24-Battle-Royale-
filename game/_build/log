@@ -3,7 +3,7 @@
 # Shared cache: disabled
 # Workspace root: /Users/darrenkey/Documents/24-battle-royale/game
 # Auto-detected concurrency: 8
-$ /Users/darrenkey/.opam/cs3110-2021fa/bin/ocamlc.opt -config > /var/folders/lr/tjkcm2yn53b8qx3wbm59lb940000gn/T/dune_d60b0f_output
+$ /Users/darrenkey/.opam/cs3110-2021fa/bin/ocamlc.opt -config > /var/folders/lr/tjkcm2yn53b8qx3wbm59lb940000gn/T/dune_3da99b_output
 # Dune context:
 #  { name = "default"
 #  ; kind = "default"
@@ -114,11 +114,9 @@ $ /Users/darrenkey/.opam/cs3110-2021fa/bin/ocamlc.opt -config > /var/folders/lr/
 #      ; windows_unicode = false
 #      }
 #  }
-$ (cd _build/default && /Users/darrenkey/.opam/cs3110-2021fa/bin/odoc support-files -o _doc/_html)
-$ (cd _build/default/_doc/_odoc/pkg/Game && /Users/darrenkey/.opam/cs3110-2021fa/bin/odoc compile --pkg Game -o page-index.odoc ../../../_mlds/Game/index.mld)
-$ (cd _build/default/lib/.game.objs/byte && /Users/darrenkey/.opam/cs3110-2021fa/bin/odoc compile -I . -I ../../../_doc/_odoc/pkg/Game --pkg Game -o game.odoc game.cmt)
+$ (cd _build/default && /Users/darrenkey/.opam/cs3110-2021fa/bin/ocamldep.opt -modules -intf lib/valid_solution_checker.mli) > _build/default/lib/.game.objs/valid_solution_checker.mli.d
+$ (cd _build/default && /Users/darrenkey/.opam/cs3110-2021fa/bin/ocamlc.opt -w @1..3@5..28@30..39@43@46..47@49..57@61..62-40 -strict-sequence -strict-formats -short-paths -keep-locs -g -bin-annot -I lib/.game.objs/byte -no-alias-deps -opaque -open Game -o lib/.game.objs/byte/game__Valid_solution_checker.cmi -c -intf lib/valid_solution_checker.mli)
 $ (cd _build/default/lib/.game.objs/byte && /Users/darrenkey/.opam/cs3110-2021fa/bin/odoc compile -I . -I ../../../_doc/_odoc/pkg/Game --pkg Game -o game__Valid_solution_checker.odoc game__Valid_solution_checker.cmti)
 $ (cd _build/default/_doc/_html && /Users/darrenkey/.opam/cs3110-2021fa/bin/odoc link -I ../_odoc/pkg/Game -I ../../lib/.game.objs/byte -o ../_odocls/Game/page-index.odocl ../_odoc/pkg/Game/page-index.odoc)
 $ (cd _build/default/_doc/_html && /Users/darrenkey/.opam/cs3110-2021fa/bin/odoc link -I ../_odoc/pkg/Game -I ../../lib/.game.objs/byte -o ../_odocls/Game/game.odocl ../../lib/.game.objs/byte/game.odoc)
-$ (cd _build/default/_doc/_html && /Users/darrenkey/.opam/cs3110-2021fa/bin/odoc html-generate -o . ../_odocls/Game/page-index.odocl)
 $ (cd _build/default/_doc/_html && /Users/darrenkey/.opam/cs3110-2021fa/bin/odoc html-generate -o . ../_odocls/Game/game.odocl)
