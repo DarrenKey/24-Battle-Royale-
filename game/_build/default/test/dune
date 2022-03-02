@@ -1,3 +1,0 @@
-(test
- (name game)
- (libraries ounit2 Game))
