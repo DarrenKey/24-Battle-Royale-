@@ -1,9 +1,9 @@
-# dune runtest
+# dune build
 # OCAMLPARAM: unset
 # Shared cache: disabled
 # Workspace root: /Users/darrenkey/Documents/24-battle-royale/game
 # Auto-detected concurrency: 8
-$ /Users/darrenkey/.opam/cs3110-2021fa/bin/ocamlc.opt -config > /var/folders/lr/tjkcm2yn53b8qx3wbm59lb940000gn/T/dune_b9d37a_output
+$ /Users/darrenkey/.opam/cs3110-2021fa/bin/ocamlc.opt -config > /var/folders/lr/tjkcm2yn53b8qx3wbm59lb940000gn/T/dune_3af01a_output
 # Dune context:
 #  { name = "default"
 #  ; kind = "default"
