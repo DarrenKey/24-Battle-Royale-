@@ -1,88 +1,84 @@
-# dune build
+# dune test
 # OCAMLPARAM: unset
-# Shared cache: disabled
-# Workspace root: /Users/darrenkey/Documents/24-battle-royale/game
-# Auto-detected concurrency: 8
-$ /Users/darrenkey/.opam/cs3110-2021fa/bin/ocamlc.opt -config > /var/folders/lr/tjkcm2yn53b8qx3wbm59lb940000gn/T/dune_3af01a_output
+# Workspace root: /home/jasong/cs3110/24-battle-royale/game
+$ /usr/bin/nproc > /tmp/dune206fa9.output 2> /dev/null
+# Auto-detected concurrency: 2
+# disable binary cache
+$ /home/jasong/.opam/cs3110/bin/ocamlc.opt -config > /tmp/dune28353e.output
 # Dune context:
 #  { name = "default"
 #  ; kind = "default"
-#  ; profile = Dev
+#  ; profile = Dyn
 #  ; merlin = true
 #  ; for_host = None
 #  ; fdo_target_exe = None
 #  ; build_dir = "default"
-#  ; toplevel_path =
-#      Some External "/Users/darrenkey/.opam/cs3110-2021fa/lib/toplevel"
-#  ; ocaml_bin = External "/Users/darrenkey/.opam/cs3110-2021fa/bin"
-#  ; ocaml = Ok External "/Users/darrenkey/.opam/cs3110-2021fa/bin/ocaml"
-#  ; ocamlc = External "/Users/darrenkey/.opam/cs3110-2021fa/bin/ocamlc.opt"
-#  ; ocamlopt =
-#      Ok External "/Users/darrenkey/.opam/cs3110-2021fa/bin/ocamlopt.opt"
-#  ; ocamldep =
-#      Ok External "/Users/darrenkey/.opam/cs3110-2021fa/bin/ocamldep.opt"
-#  ; ocamlmklib =
-#      Ok External "/Users/darrenkey/.opam/cs3110-2021fa/bin/ocamlmklib.opt"
+#  ; toplevel_path = Some External "/home/jasong/.opam/cs3110/lib/toplevel"
+#  ; ocaml_bin = External "/home/jasong/.opam/cs3110/bin"
+#  ; ocaml = Ok External "/home/jasong/.opam/cs3110/bin/ocaml"
+#  ; ocamlc = External "/home/jasong/.opam/cs3110/bin/ocamlc.opt"
+#  ; ocamlopt = Ok External "/home/jasong/.opam/cs3110/bin/ocamlopt.opt"
+#  ; ocamldep = Ok External "/home/jasong/.opam/cs3110/bin/ocamldep.opt"
+#  ; ocamlmklib = Ok External "/home/jasong/.opam/cs3110/bin/ocamlmklib.opt"
 #  ; env =
 #      map
-#        { "DUNE_OCAML_HARDCODED" : "/Users/darrenkey/.opam/cs3110-2021fa/lib"
-#        ; "DUNE_OCAML_STDLIB" :
-#            "/Users/darrenkey/.opam/cs3110-2021fa/lib/ocaml"
-#        ; "DUNE_SOURCEROOT" :
-#            "/Users/darrenkey/Documents/24-battle-royale/game"
+#        { "DUNE_OCAML_HARDCODED" : "/home/jasong/.opam/cs3110/lib"
+#        ; "DUNE_OCAML_STDLIB" : "/home/jasong/.opam/cs3110/lib/ocaml"
+#        ; "DUNE_SOURCEROOT" : "/home/jasong/cs3110/24-battle-royale/game"
 #        ; "INSIDE_DUNE" :
-#            "/Users/darrenkey/Documents/24-battle-royale/game/_build/default"
+#            "/home/jasong/cs3110/24-battle-royale/game/_build/default"
 #        ; "OCAMLFIND_IGNORE_DUPS_IN" :
-#            "/Users/darrenkey/Documents/24-battle-royale/game/_build/install/default/lib"
+#            "/home/jasong/cs3110/24-battle-royale/game/_build/install/default/lib"
 #        ; "OCAMLPATH" :
-#            "/Users/darrenkey/Documents/24-battle-royale/game/_build/install/default/lib"
+#            "/home/jasong/cs3110/24-battle-royale/game/_build/install/default/lib"
 #        ; "OCAMLTOP_INCLUDE_PATH" :
-#            "/Users/darrenkey/Documents/24-battle-royale/game/_build/install/default/lib/toplevel"
+#            "/home/jasong/cs3110/24-battle-royale/game/_build/install/default/lib/toplevel"
 #        ; "OCAML_COLOR" : "always"
 #        ; "OPAMCOLOR" : "always"
 #        }
-#  ; findlib_path = [ External "/Users/darrenkey/.opam/cs3110-2021fa/lib" ]
+#  ; findlib_path = [ External "/home/jasong/.opam/cs3110/lib" ]
 #  ; arch_sixtyfour = true
 #  ; natdynlink_supported = true
 #  ; supports_shared_libraries = true
 #  ; ocaml_config =
 #      { version = "4.12.0"
-#      ; standard_library_default =
-#          "/Users/darrenkey/.opam/cs3110-2021fa/lib/ocaml"
-#      ; standard_library = "/Users/darrenkey/.opam/cs3110-2021fa/lib/ocaml"
+#      ; standard_library_default = "/home/jasong/.opam/cs3110/lib/ocaml"
+#      ; standard_library = "/home/jasong/.opam/cs3110/lib/ocaml"
 #      ; standard_runtime = "the_standard_runtime_variable_was_deleted"
 #      ; ccomp_type = "cc"
-#      ; c_compiler = "cc"
-#      ; ocamlc_cflags = [ "-O2"; "-fno-strict-aliasing"; "-fwrapv" ]
+#      ; c_compiler = "gcc"
+#      ; ocamlc_cflags = [ "-O2"; "-fno-strict-aliasing"; "-fwrapv"; "-fPIC" ]
 #      ; ocamlc_cppflags = [ "-D_FILE_OFFSET_BITS=64"; "-D_REENTRANT" ]
-#      ; ocamlopt_cflags = [ "-O2"; "-fno-strict-aliasing"; "-fwrapv" ]
+#      ; ocamlopt_cflags =
+#          [ "-O2"; "-fno-strict-aliasing"; "-fwrapv"; "-fPIC" ]
 #      ; ocamlopt_cppflags = [ "-D_FILE_OFFSET_BITS=64"; "-D_REENTRANT" ]
 #      ; bytecomp_c_compiler =
-#          [ "cc"
+#          [ "gcc"
 #          ; "-O2"
 #          ; "-fno-strict-aliasing"
 #          ; "-fwrapv"
+#          ; "-fPIC"
 #          ; "-D_FILE_OFFSET_BITS=64"
 #          ; "-D_REENTRANT"
 #          ]
-#      ; bytecomp_c_libraries = [ "-lm"; "-lpthread" ]
+#      ; bytecomp_c_libraries = [ "-lm"; "-ldl"; "-lpthread" ]
 #      ; native_c_compiler =
-#          [ "cc"
+#          [ "gcc"
 #          ; "-O2"
 #          ; "-fno-strict-aliasing"
 #          ; "-fwrapv"
+#          ; "-fPIC"
 #          ; "-D_FILE_OFFSET_BITS=64"
 #          ; "-D_REENTRANT"
 #          ]
-#      ; native_c_libraries = [ "-lm" ]
-#      ; native_pack_linker = [ "ld"; "-r"; "-o" ]
+#      ; native_c_libraries = [ "-lm"; "-ldl" ]
 #      ; cc_profile = []
-#      ; architecture = "arm64"
+#      ; architecture = "amd64"
 #      ; model = "default"
 #      ; int_size = 63
 #      ; word_size = 64
-#      ; system = "macosx"
-#      ; asm = [ "clang"; "-c"; "-Wno-trigraphs" ]
+#      ; system = "linux"
+#      ; asm = [ "as" ]
 #      ; asm_cfi_supported = true
 #      ; with_frame_pointers = false
 #      ; ext_exe = ""
@@ -93,8 +89,8 @@ $ /Users/darrenkey/.opam/cs3110-2021fa/bin/ocamlc.opt -config > /var/folders/lr/
 #      ; os_type = "Unix"
 #      ; default_executable_name = "a.out"
 #      ; systhread_supported = true
-#      ; host = "aarch64-apple-darwin20.5.0"
-#      ; target = "aarch64-apple-darwin20.5.0"
+#      ; host = "x86_64-pc-linux-gnu"
+#      ; target = "x86_64-pc-linux-gnu"
 #      ; profiling = false
 #      ; flambda = false
 #      ; spacetime = false
@@ -114,3 +110,11 @@ $ /Users/darrenkey/.opam/cs3110-2021fa/bin/ocamlc.opt -config > /var/folders/lr/
 #      ; windows_unicode = false
 #      }
 #  }
+$ (cd _build/default && /home/jasong/.opam/cs3110/bin/ocamlc.opt -w +a-4-6-7-9-27-29-30-32..42-44-45-48-50-60-66-67 -warn-error -a+31 -g -bin-annot -I test/.main.eobjs/byte -I /home/jasong/.opam/cs3110/lib/bytes -I /home/jasong/.opam/cs3110/lib/ounit2 -I /home/jasong/.opam/cs3110/lib/ounit2/advanced -I /home/jasong/.opam/cs3110/lib/seq -I /home/jasong/.opam/cs3110/lib/stdlib-shims -I lib/.game.objs/byte -no-alias-deps -opaque -o test/.main.eobjs/byte/dune__exe__Main.cmo -c -impl test/main.ml)
+> File "test/main.ml", line 7, characters 4-6:
+> 7 | let ht = Hashtbl.create 10
+>         ^^
+> Error: The type of this expression,
+>        (int * int * int * int, '_weak1) Hashtbl.t,
+>        contains type variables that cannot be generalized
+[2]
