@@ -1,0 +1,20 @@
+(lang dune 2.9)
+(name Game)
+(library
+ (name Game)
+ (kind normal)
+ (archives (byte game.cma) (native game.cmxa))
+ (plugins (byte game.cma) (native game.cmxs))
+ (native_archives game.a)
+ (main_module_name Game)
+ (modes byte native)
+ (modules
+  (wrapped
+   (main_module_name Game)
+   (alias_module
+    (name Game)
+    (obj_name game)
+    (visibility public)
+    (kind alias)
+    (impl))
+   (wrapped true))))

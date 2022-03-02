@@ -1,2 +1,6 @@
-# dune init project game
+# dune build
 # OCAMLPARAM: unset
+# Workspace root: /home/jasong/cs3110/24-battle-royale
+$ /usr/bin/nproc > /tmp/dunefd1770.output 2> /dev/null
+# Auto-detected concurrency: 2
+# disable binary cache
