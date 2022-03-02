@@ -1,4 +1,3 @@
 (executable
- (public_name game)
  (name main)
  (libraries game))
