@@ -34,11 +34,20 @@ val check_all_nums_used_once : string -> int * int * int * int -> bool
 (** ------------------ Overview methods ---------------------------------*)
 val check_solution_valid : string -> int * int * int * int -> bool
 (** [check_solution_valid s] uses all the helper methods above to check
-    if the solution [s] is a valid solution.*)
+    if the solution [s] is a valid solution.
+        
+    Precondition - [s] is a string.
+    Postcondition - returns a string which can be parsed into a
+    binary expression tree where every number is used once and only once. *)
 
 val expression_tree_creator : string -> tree
 (** [expression_tree_creator s] creates an expression tree 
-    from the submitted solution [s].*)
+    from the submitted solution [s].
+    
+    Precondition - [s] is a string which can be parsed into a binary
+    expression tree.
+    
+    Postcondition - returns a valid binary expression tree. *)
 
 val check_expression_tree : tree -> bool
 (** [check_expression_tree t] checks whether or not the tree [t]
