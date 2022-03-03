@@ -27,6 +27,8 @@ let pop_with_no_return paren_stack =
   Stack.pop paren_stack;
   ()
 
+(* Number of contiguous parenthesis at the start. ex: (((5))) returns
+   3. *)
 let starting_paren_num (sol : string) =
   let rec num_paren (index : int) =
     if sol.[index] = '(' || sol.[index] = '[' then num_paren (index + 1)
@@ -58,7 +60,9 @@ let no_initial_paren (sol : string) : string =
   find_paren 0 (starting_paren_num sol)
 
 (* Return index of first expression. It should be + at the highest level
-   (no parenthesis) but if + doesn't exist it is * *)
+   (no parenthesis) but if + doesn't exist it is * For example:
+   (2+3)*(5+6) returns the index of the *, while 2*3+5+6 returns the
+   index of the first +. *)
 let find_first_expression_num (sol : string) : int =
   let paren_stack = Stack.create () in
   let rec find_paren (index : int) (last_multi_div : int) =
@@ -78,6 +82,7 @@ let find_first_expression_num (sol : string) : int =
   in
   find_paren 0 0
 
+(* Convert the character operators to the type operator *)
 let get_operator (sol : string) (expression_index : int) =
   match sol.[expression_index] with
   | '+' -> Addition
@@ -103,6 +108,24 @@ let rec inorder_tree = function
   | Leaf value -> [ value ]
   | Node (value, left, right) ->
       (inorder_tree left @ [ 999 ]) @ inorder_tree right
+
+let strip_spaces (sol : string) =
+  let split_sol = String.split_on_char ' ' sol in
+  List.fold_left (fun acc cur -> acc ^ cur) "" split_sol
+
+(* sol has to be >= 2 *)
+let rec format_paren_multi (sol : string) =
+  let rec paren_recurs (index : int) =
+    if index < String.length sol then
+      match (sol.[index - 1], sol.[index]) with
+      | '0' .. '9', '(' | '0' .. '9', '[' ->
+          (format_paren_multi (String.sub sol 0 index) ^ "*")
+          ^ format_paren_multi
+              (String.sub sol index (String.length sol - index))
+      | _ -> paren_recurs (index + 1)
+    else sol
+  in
+  paren_recurs 1
 
 let check_expression_tree (_ : tree) =
   raise (Failure "Unimplemented: Main.play_game")

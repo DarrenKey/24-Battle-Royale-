@@ -6,7 +6,16 @@
 
     Precondition : solution given as a string without any spaces.*)
 
-type tree
+type operator =
+  | Multiplication
+  | Division
+  | Addition
+  | Subtraction
+
+type tree =
+  | Leaf of int
+  | Node of operator * tree * tree
+
 (** Implementation of the binary expression tree. *)
 
 (** -------------Helper methods for [check_solution_valid]------------*)
@@ -42,13 +51,16 @@ val expression_tree_creator : string -> tree
 (** [expression_tree_creator s] creates an expression tree from the
     submitted solution [s].
 
-    Precondition - [s] is a string which can be parsed into a binary
-    expression tree.
+    Precondition - [s] is a valid string which can be parsed into a
+    binary expression tree and has every combination of numbers used
+    once and only once .
 
     Postcondition - returns a valid binary expression tree. *)
 
 val inorder_tree : tree -> int list
 val no_initial_paren : string -> string
+val strip_spaces : string -> string
+val format_paren_multi : string -> string
 
 val check_expression_tree : tree -> bool
 (** [check_expression_tree t] checks whether or not the tree [t] equals
