@@ -38,27 +38,24 @@ let starting_paren_num (sol : string) =
    then the surrounding parentheses are deleted (ex: (2+4) becomes
    2+4) *)
 let no_initial_paren (sol : string) : string =
-  if
-    (sol.[0] = '(' && sol.[String.length sol - 1] = ')')
-    || (sol.[0] = '[' && sol.[String.length sol - 1] = ']')
-  then
-    let deparen_sol = String.sub sol 1 (String.length sol - 2) in
-    let paren_stack = Stack.create () in
-    let rec find_paren (index : int) =
-      if index = String.length deparen_sol then deparen_sol
-      else
-        match deparen_sol.[index] with
-        | '(' | '[' ->
-            Stack.push '(' paren_stack;
-            find_paren (index + 1)
-        | (')' | ']') when Stack.is_empty paren_stack -> sol
-        | ')' | ']' ->
-            pop_with_no_return paren_stack;
-            find_paren (index + 1)
-        | _ -> find_paren (index + 1)
-    in
-    find_paren 0
-  else sol
+  let paren_stack = Stack.create () in
+  let rec find_paren (index : int) (min_stack : int) =
+    if index = String.length sol - min_stack then
+      String.sub sol
+        (Stack.length paren_stack)
+        (String.length sol - (min_stack * 2))
+    else
+      match sol.[index] with
+      | '(' | '[' ->
+          Stack.push '(' paren_stack;
+          find_paren (index + 1) min_stack
+      | ')' | ']' ->
+          pop_with_no_return paren_stack;
+          find_paren (index + 1)
+            (min min_stack (Stack.length paren_stack))
+      | _ -> find_paren (index + 1) min_stack
+  in
+  find_paren 0 (starting_paren_num sol)
 
 (* Return index of first expression. It should be + at the highest level
    (no parenthesis) but if + doesn't exist it is * *)
