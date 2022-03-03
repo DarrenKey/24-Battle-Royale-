@@ -1,10 +1,10 @@
 # dune test
 # OCAMLPARAM: unset
 # Workspace root: /home/jasong/cs3110/24-battle-royale/game
-$ /usr/bin/nproc > /tmp/dune206fa9.output 2> /dev/null
+$ /usr/bin/nproc > /tmp/dune77c99c.output 2> /dev/null
 # Auto-detected concurrency: 2
 # disable binary cache
-$ /home/jasong/.opam/cs3110/bin/ocamlc.opt -config > /tmp/dune28353e.output
+$ /home/jasong/.opam/cs3110/bin/ocamlc.opt -config > /tmp/duneec57fa.output
 # Dune context:
 #  { name = "default"
 #  ; kind = "default"
@@ -110,11 +110,3 @@ $ /home/jasong/.opam/cs3110/bin/ocamlc.opt -config > /tmp/dune28353e.output
 #      ; windows_unicode = false
 #      }
 #  }
-$ (cd _build/default && /home/jasong/.opam/cs3110/bin/ocamlc.opt -w +a-4-6-7-9-27-29-30-32..42-44-45-48-50-60-66-67 -warn-error -a+31 -g -bin-annot -I test/.main.eobjs/byte -I /home/jasong/.opam/cs3110/lib/bytes -I /home/jasong/.opam/cs3110/lib/ounit2 -I /home/jasong/.opam/cs3110/lib/ounit2/advanced -I /home/jasong/.opam/cs3110/lib/seq -I /home/jasong/.opam/cs3110/lib/stdlib-shims -I lib/.game.objs/byte -no-alias-deps -opaque -o test/.main.eobjs/byte/dune__exe__Main.cmo -c -impl test/main.ml)
-> File "test/main.ml", line 7, characters 4-6:
-> 7 | let ht = Hashtbl.create 10
->         ^^
-> Error: The type of this expression,
->        (int * int * int * int, '_weak1) Hashtbl.t,
->        contains type variables that cannot be generalized
-[2]
