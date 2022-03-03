@@ -23,10 +23,40 @@ module Combinations = struct
   | _::_::_::_::[] -> List.sort compare lst |> list_to_tuple |> Hashtbl.mem tbl 
   | _ -> raise (Invalid_argument "[lst] is not a list of 4 numbers")
   
-  (** [is_valid_comb] is true iff you can get 24 with the four numbers in list [comb]
-      Example: [is_valid_comb \[1;1;4;6\]] is true
+  let input_is_valid lst = match lst with 
+  | _::_::_::_::[] -> true
+  | _ -> false
+
+    let insert item index lst = if index < 0 || index > List.length lst then 
+        raise (Failure "i is not in range of the list")
+        else 
+            let rec insert_wrapper i before n l = match i, l with
+                | 0, after -> (List.rev before) @ (n::after)
+                | ind, h::tail -> insert_wrapper (i-1) (h::before) n tail
+                | _, after -> raise (Failure "shouldn't happen")
+            in insert_wrapper index [] item lst    
+
+  let rec permute_one num perm = match perm with
+  | [] -> []
+  | h::tail -> 
+
+  let rec permute lst = match lst with
+  | [] -> [[]]
+  | h::tail -> 
+
+    let rec check_ops num acc comb = match comb with
+    | [] -> acc = num
+    | h::tail -> check_ops num (acc +. h) tail 
+      || check_ops num (acc -. h) tail
+      || check_ops num (h -. acc) tail
+      || check_ops num (acc *. h) tail
+      || check_ops num (acc /. h) tail
+      || check_ops num (h /. acc) tail
+
+  (** [makes_24] is true iff you can get 24 with the four numbers in list [comb]
+      Example: [makes_24 \[1;1;4;6\]] is true
       Requires: comb is a list of 4 positive numbers less than or equal to 12
       Raises: Invalid_argument *)
-  let is_valid_comb comb = failwith "not implemented"
-
+  let makes_24 comb = arr_makes_24 (Array.of_list comb)
+    
 end
