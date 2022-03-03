@@ -17,18 +17,95 @@ let check_valid_paren (_ : string) =
 let check_valid_operations (_ : string) =
   raise (Failure "Unimplemented: Main.play_game")
 
-let check_all_nums_used_once
-    (_ : string)
-    (_ : int * int * int * int) =
+let check_all_nums_used_once (_ : string) (_ : int * int * int * int) =
   raise (Failure "Unimplemented: Main.play_game")
 
-let check_solution_valid
-(_ : string)
-(_ : int * int * int * int) =
-raise (Failure "Unimplemented: Main.play_game")
-
-let expression_tree_creator (_ : string) =
+let check_solution_valid (_ : string) (_ : int * int * int * int) =
   raise (Failure "Unimplemented: Main.play_game")
+
+let pop_with_no_return paren_stack =
+  Stack.pop paren_stack;
+  ()
+
+let starting_paren_num (sol : string) =
+  let rec num_paren (index : int) =
+    if sol.[index] = '(' || sol.[index] = '[' then num_paren (index + 1)
+    else index
+  in
+  num_paren 0
+
+(* If the expression has surrounding parentheses that are unnecessary,
+   then the surrounding parentheses are deleted (ex: (2+4) becomes
+   2+4) *)
+let no_initial_paren (sol : string) : string =
+  if
+    (sol.[0] = '(' && sol.[String.length sol - 1] = ')')
+    || (sol.[0] = '[' && sol.[String.length sol - 1] = ']')
+  then
+    let deparen_sol = String.sub sol 1 (String.length sol - 2) in
+    let paren_stack = Stack.create () in
+    let rec find_paren (index : int) =
+      if index = String.length deparen_sol then deparen_sol
+      else
+        match deparen_sol.[index] with
+        | '(' | '[' ->
+            Stack.push '(' paren_stack;
+            find_paren (index + 1)
+        | (')' | ']') when Stack.is_empty paren_stack -> sol
+        | ')' | ']' ->
+            pop_with_no_return paren_stack;
+            find_paren (index + 1)
+        | _ -> find_paren (index + 1)
+    in
+    find_paren 0
+  else sol
+
+(* Return index of first expression. It should be + at the highest level
+   (no parenthesis) but if + doesn't exist it is * *)
+let find_first_expression_num (sol : string) : int =
+  let paren_stack = Stack.create () in
+  let rec find_paren (index : int) (last_multi_div : int) =
+    if index >= String.length sol then last_multi_div
+    else
+      match sol.[index] with
+      | '(' | '[' ->
+          Stack.push '(' paren_stack;
+          find_paren (index + 1) last_multi_div
+      | ')' | ']' ->
+          pop_with_no_return paren_stack;
+          find_paren (index + 1) last_multi_div
+      | ('+' | '-') when Stack.is_empty paren_stack -> index
+      | ('*' | 'x' | '/') when Stack.is_empty paren_stack ->
+          find_paren (index + 1) index
+      | _ -> find_paren (index + 1) last_multi_div
+  in
+  find_paren 0 0
+
+let get_operator (sol : string) (expression_index : int) =
+  match sol.[expression_index] with
+  | '+' -> Addition
+  | '-' -> Subtraction
+  | '*' | 'x' -> Multiplication
+  | '/' -> Division
+  | _ -> Addition
+
+let rec expression_tree_creator (sol : string) : tree =
+  let sol = no_initial_paren sol in
+  match int_of_string_opt sol with
+  | Some value -> Leaf value
+  | None ->
+      let expression_index = find_first_expression_num sol in
+      Node
+        ( get_operator sol expression_index,
+          expression_tree_creator (String.sub sol 0 expression_index),
+          expression_tree_creator
+            (String.sub sol (expression_index + 1)
+               (String.length sol - (expression_index + 1))) )
+
+let rec inorder_tree = function
+  | Leaf value -> [ value ]
+  | Node (value, left, right) ->
+      (inorder_tree left @ [ 999 ]) @ inorder_tree right
 
 let check_expression_tree (_ : tree) =
   raise (Failure "Unimplemented: Main.play_game")
