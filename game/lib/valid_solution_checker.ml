@@ -1,3 +1,33 @@
+module Fraction = struct
+  type frac = int * int
+
+  let rec gcd a b = if b = 0 then a else gcd b (a mod b)
+
+  let reduce_frac (n : frac) =
+    match n with
+    | a, b ->
+        let gcd_frac = gcd a b in
+        (a / gcd_frac, b / gcd_frac)
+
+  (* a + b *)
+  let add_frac (a : frac) (b : frac) =
+    match (a, b) with
+    | (a1, a2), (b1, b2) -> reduce_frac ((a1 * b2) + (b1 * a2), a2 * b2)
+
+  (* a - b *)
+  let subtract_frac (a : frac) (b : frac) =
+    match (a, b) with
+    | (a1, a2), (b1, b2) -> reduce_frac ((a1 * b2) - (b1 * a2), a2 * b2)
+
+  let multiply_frac (a : frac) (b : frac) =
+    match (a, b) with
+    | (a1, a2), (b1, b2) -> reduce_frac (a1 * b1, a2 * b2)
+
+  let divide_frac (a : frac) (b : frac) =
+    match (a, b) with
+    | (a1, a2), (b1, b2) -> reduce_frac (a1 * b2, a2 * b1)
+end
+
 type operator =
   | Multiplication
   | Division
@@ -244,19 +274,23 @@ let rec format_paren_multi (sol : string) =
   in
   paren_recurs 1
 
+open Fraction
+
 let check_expression_tree (t : tree) : bool =
-  let rec evaluate_tree (t : tree) : int =
+  let rec evaluate_tree (t : tree) : frac =
     match t with
-    | Leaf num -> num
+    | Leaf num -> (num, 1)
     | Node (op, t1, t2) -> begin
         match op with
-        | Addition -> evaluate_tree t1 + evaluate_tree t2
-        | Subtraction -> evaluate_tree t1 - evaluate_tree t2
-        | Multiplication -> evaluate_tree t1 * evaluate_tree t2
-        | Division -> evaluate_tree t / evaluate_tree t2
+        | Addition -> add_frac (evaluate_tree t1) (evaluate_tree t2)
+        | Subtraction ->
+            subtract_frac (evaluate_tree t1) (evaluate_tree t2)
+        | Multiplication ->
+            multiply_frac (evaluate_tree t1) (evaluate_tree t2)
+        | Division -> divide_frac (evaluate_tree t1) (evaluate_tree t2)
       end
   in
-  evaluate_tree t = 24
+  evaluate_tree t = (24, 1)
 
 let check_solution (sol : string) (nums : int list) : solution_output =
   let sol = sol |> strip_spaces |> format_paren_multi in
