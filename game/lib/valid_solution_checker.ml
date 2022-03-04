@@ -73,6 +73,11 @@ let rec check_valid_operations (str : string) (prev_char : char) : bool
           (String.length str - 1 |> String.sub str 1)
           s_first
 
+let rec add_back_nums (elem : int) (nums : int list) (dif_len : int) :
+    int list =
+  if dif_len = 1 then nums
+  else add_back_nums elem (elem :: nums) (dif_len - 1)
+
 let rec check_all_nums_used_once (str : string) (nums : int list) : bool
     =
   if str = "" then
@@ -91,9 +96,10 @@ let rec check_all_nums_used_once (str : string) (nums : int list) : bool
             in
             if List.length filtered_nums = List.length nums then false
             else
-              check_all_nums_used_once
-                (String.length str - 2 |> String.sub str 2)
-                filtered_nums
+              add_back_nums s_two_digit filtered_nums
+                (List.length nums - List.length filtered_nums)
+              |> check_all_nums_used_once
+                   (String.length str - 2 |> String.sub str 2)
           with Failure _ ->
             let filtered_nums =
               List.filter
@@ -103,9 +109,12 @@ let rec check_all_nums_used_once (str : string) (nums : int list) : bool
             in
             if List.length filtered_nums = List.length nums then false
             else
-              check_all_nums_used_once
-                (String.length str - 1 |> String.sub str 1)
+              add_back_nums
+                (s_first |> Char.escaped |> int_of_string)
                 filtered_nums
+                (List.length nums - List.length filtered_nums)
+              |> check_all_nums_used_once
+                   (String.length str - 1 |> String.sub str 1)
         else
           let filtered_nums =
             List.filter
@@ -114,9 +123,12 @@ let rec check_all_nums_used_once (str : string) (nums : int list) : bool
           in
           if List.length filtered_nums = List.length nums then false
           else
-            check_all_nums_used_once
-              (String.length str - 1 |> String.sub str 1)
+            add_back_nums
+              (s_first |> Char.escaped |> int_of_string)
               filtered_nums
+              (List.length nums - List.length filtered_nums)
+            |> check_all_nums_used_once
+                 (String.length str - 1 |> String.sub str 1)
     | _ ->
         check_all_nums_used_once
           (String.length str - 1 |> String.sub str 1)
