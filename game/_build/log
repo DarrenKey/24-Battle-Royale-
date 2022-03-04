@@ -1,10 +1,10 @@
 # dune exec bin/combs_printer.exe
 # OCAMLPARAM: unset
 # Workspace root: /home/jasong/cs3110/24-battle-royale/game
-$ /usr/bin/nproc > /tmp/dune29217f.output 2> /dev/null
+$ /usr/bin/nproc > /tmp/dune81d743.output 2> /dev/null
 # Auto-detected concurrency: 2
 # disable binary cache
-$ /home/jasong/.opam/cs3110/bin/ocamlc.opt -config > /tmp/dune8d9174.output
+$ /home/jasong/.opam/cs3110/bin/ocamlc.opt -config > /tmp/dune753595.output
 # Dune context:
 #  { name = "default"
 #  ; kind = "default"

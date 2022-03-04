@@ -22,14 +22,14 @@ let combs = 1365;;
 (** [seen_combs] is the set containing all combinations that have been generated*)
 let seen_combs : (int*int*int*int, bool) Hashtbl.t = Hashtbl.create combs;;
 
-let print_valid_combs () = 
+let print_valid_combs output_file = 
   for a = 1 to 12 do
     for b = 1 to 12 do
       for c = 1 to 12 do
         for d = 1 to 12 do
           if [a;b;c;d] |> in_set seen_combs = false && (makes_24 [a;b;c;d]) then
               (
-              let o = open_out_gen [Open_append; Open_creat] 0o666 "./assets/combos.txt" in
+              let o = open_out_gen [Open_append; Open_creat] 0o666 ("./assets/"^output_file) in
                 Printf.fprintf o "%d %d %d %d\n" a b c d;
                 close_out o
               );
@@ -40,4 +40,4 @@ let print_valid_combs () =
   done;
 ;;
 
-print_valid_combs ();;
+print_valid_combs "combos.txt";;
