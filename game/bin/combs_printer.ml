@@ -40,4 +40,4 @@ let print_valid_combs () =
   done;
 ;;
 
-(* print_valid_combs ();; *)
+print_valid_combs ();;
