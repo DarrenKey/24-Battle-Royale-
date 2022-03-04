@@ -2,9 +2,5 @@
 module Combinations = Game__Combinations
 
 
-(** @canonical Game.Combs_printer *)
-module Combs_printer = Game__Combs_printer
-
-
 (** @canonical Game.Valid_solution_checker *)
 module Valid_solution_checker = Game__Valid_solution_checker
