@@ -12,6 +12,11 @@ type operator =
   | Addition
   | Subtraction
 
+type solution_output =
+  | Invalid
+  | Incorrect
+  | Correct
+
 type tree =
   | Leaf of int
   | Node of operator * tree * tree
@@ -65,3 +70,8 @@ val format_paren_multi : string -> string
 val check_expression_tree : tree -> bool
 (** [check_expression_tree t] checks whether or not the tree [t] equals
     24.*)
+
+val check_solution : string -> int list -> solution_output
+(** [check_solution s] combines the functions above and returns whether
+    or not the solution [s] is invalid (inputted wrong), incorrect (does
+    not equal 24), or correct (does equal 24). *)

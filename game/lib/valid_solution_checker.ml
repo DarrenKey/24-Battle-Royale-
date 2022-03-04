@@ -4,6 +4,11 @@ type operator =
   | Addition
   | Subtraction
 
+type solution_output =
+  | Invalid
+  | Incorrect
+  | Correct
+
 type tree =
   | Leaf of int
   | Node of operator * tree * tree
@@ -240,3 +245,12 @@ let check_expression_tree (t : tree) : bool =
       end
   in
   evaluate_tree t = 24
+
+let check_solution (sol : string) (nums : int list) : solution_output =
+  let sol = sol |> strip_spaces |> format_paren_multi in
+  if not (check_solution_valid sol nums) then Invalid
+  else
+    let expression_tree = expression_tree_creator sol in
+    match check_expression_tree expression_tree with
+    | true -> Correct
+    | false -> Incorrect
