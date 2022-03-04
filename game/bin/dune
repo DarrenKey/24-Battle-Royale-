@@ -1,3 +1,9 @@
 (executable
  (name main)
- (libraries game Game))
+ (modules main)
+ (libraries game))
+
+(executable
+ (name combs_printer)
+ (modules combs_printer)
+ (libraries Game))

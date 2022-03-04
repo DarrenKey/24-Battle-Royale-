@@ -1,10 +1,10 @@
 # dune build
 # OCAMLPARAM: unset
 # Workspace root: /home/jasong/cs3110/24-battle-royale/game
-$ /usr/bin/nproc > /tmp/dunef4a84d.output 2> /dev/null
+$ /usr/bin/nproc > /tmp/duned3b44c.output 2> /dev/null
 # Auto-detected concurrency: 2
 # disable binary cache
-$ /home/jasong/.opam/cs3110/bin/ocamlc.opt -config > /tmp/dunebef71f.output
+$ /home/jasong/.opam/cs3110/bin/ocamlc.opt -config > /tmp/dunef8b33a.output
 # Dune context:
 #  { name = "default"
 #  ; kind = "default"
@@ -110,4 +110,9 @@ $ /home/jasong/.opam/cs3110/bin/ocamlc.opt -config > /tmp/dunebef71f.output
 #      ; windows_unicode = false
 #      }
 #  }
-$ (cd _build/default && /home/jasong/.opam/cs3110/bin/ocamldep.opt -modules -impl bin/combs_printer.ml) > _build/default/bin/.main.eobjs/combs_printer.ml.d
+$ (cd _build/default && /home/jasong/.opam/cs3110/bin/ocamlc.opt -w +a-4-6-7-9-27-29-30-32..42-44-45-48-50-60-66-67 -warn-error -a+31 -g -bin-annot -I bin/.main.eobjs/byte -I lib/.game.objs/byte -no-alias-deps -opaque -o bin/.main.eobjs/byte/dune__exe__Main.cmo -c -impl bin/main.ml)
+$ (cd _build/default && /home/jasong/.opam/cs3110/bin/ocamlopt.opt -w +a-4-6-7-9-27-29-30-32..42-44-45-48-50-60-66-67 -warn-error -a+31 -g -I bin/.main.eobjs/byte -I bin/.main.eobjs/native -I lib/.game.objs/byte -I lib/.game.objs/native -intf-suffix .ml -no-alias-deps -opaque -o bin/.main.eobjs/native/dune__exe__Main.cmx -c -impl bin/main.ml)
+$ (cd _build/default && /home/jasong/.opam/cs3110/bin/ocamlc.opt -w +a-4-6-7-9-27-29-30-32..42-44-45-48-50-60-66-67 -warn-error -a+31 -g -bin-annot -I bin/.combs_printer.eobjs/byte -I lib/.game.objs/byte -no-alias-deps -opaque -o bin/.combs_printer.eobjs/byte/dune__exe__Combs_printer.cmo -c -impl bin/combs_printer.ml)
+$ (cd _build/default && /home/jasong/.opam/cs3110/bin/ocamlopt.opt -w +a-4-6-7-9-27-29-30-32..42-44-45-48-50-60-66-67 -warn-error -a+31 -g -I bin/.combs_printer.eobjs/byte -I bin/.combs_printer.eobjs/native -I lib/.game.objs/byte -I lib/.game.objs/native -intf-suffix .ml -no-alias-deps -opaque -o bin/.combs_printer.eobjs/native/dune__exe__Combs_printer.cmx -c -impl bin/combs_printer.ml)
+$ (cd _build/default && /home/jasong/.opam/cs3110/bin/ocamlopt.opt -w +a-4-6-7-9-27-29-30-32..42-44-45-48-50-60-66-67 -warn-error -a+31 -g -o bin/main.exe lib/game.cmxa bin/.main.eobjs/native/dune__exe__Main.cmx)
+$ (cd _build/default && /home/jasong/.opam/cs3110/bin/ocamlopt.opt -w +a-4-6-7-9-27-29-30-32..42-44-45-48-50-60-66-67 -warn-error -a+31 -g -o bin/combs_printer.exe lib/game.cmxa bin/.combs_printer.eobjs/native/dune__exe__Combs_printer.cmx)
