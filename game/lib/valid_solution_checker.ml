@@ -8,20 +8,120 @@ type tree =
   | Leaf of int
   | Node of operator * tree * tree
 
-let check_valid_char (_ : string) =
-  raise (Failure "Unimplemented: Main.play_game")
+let rec check_valid_char (str : string) : bool =
+  if str = "" then true
+  else
+    let s = String.get str 0 in
+    match s with
+    | '0' .. '9' | '+' | '/' | '-' | 'x' | '*' | '[' | ']' | '(' | ')'
+      ->
+        String.length str - 1 |> String.sub str 1 |> check_valid_char
+    | _ -> false
 
-let check_valid_paren (_ : string) =
-  raise (Failure "Unimplemented: Main.play_game")
+let rec check_valid_paren (str : string) (paren_stack : char Stack.t) :
+    bool =
+  if str = "" then Stack.is_empty paren_stack
+  else
+    let s_first = String.get str 0 in
+    let s_rest = String.length str - 1 |> String.sub str 1 in
+    match s_first with
+    | '[' | '(' ->
+        Stack.push s_first paren_stack;
+        check_valid_paren s_rest paren_stack
+    | ']' ->
+        if Stack.is_empty paren_stack then false
+        else
+          let top_elem = Stack.pop paren_stack in
+          if top_elem = '[' then check_valid_paren s_rest paren_stack
+          else false
+    | ')' ->
+        if Stack.is_empty paren_stack then false
+        else
+          let top_elem = Stack.pop paren_stack in
+          if top_elem = '(' then check_valid_paren s_rest paren_stack
+          else false
+    | _ -> check_valid_paren s_rest paren_stack
 
-let check_valid_operations (_ : string) =
-  raise (Failure "Unimplemented: Main.play_game")
+let rec check_valid_operations (str : string) (prev_char : char) : bool
+    =
+  if str = "" then true
+  else
+    let s_first = String.get str 0 in
+    match s_first with
+    | '+' | '/' | '-' | 'x' | '*' -> begin
+        match prev_char with
+        | '0' .. '9' | ']' | ')' -> begin
+            try
+              let next_char = String.get str 1 in
+              match next_char with
+              | '0' .. '9' | '[' | '(' ->
+                  check_valid_operations
+                    (String.length str - 1 |> String.sub str 1)
+                    s_first
+              | _ -> false
+            with Invalid_argument _ -> false
+          end
+        | _ -> false
+      end
+    | _ ->
+        check_valid_operations
+          (String.length str - 1 |> String.sub str 1)
+          s_first
 
-let check_all_nums_used_once (_ : string) (_ : int * int * int * int) =
-  raise (Failure "Unimplemented: Main.play_game")
+let rec check_all_nums_used_once (str : string) (nums : int list) : bool
+    =
+  if str = "" then
+    match nums with
+    | [] -> true
+    | _ -> false
+  else
+    let s_first = String.get str 0 in
+    match s_first with
+    | '0' .. '9' ->
+        if String.length str >= 2 then
+          try
+            let s_two_digit = String.sub str 0 2 |> int_of_string in
+            let filtered_nums =
+              List.filter (fun s -> s <> s_two_digit) nums
+            in
+            if List.length filtered_nums = List.length nums then false
+            else
+              check_all_nums_used_once
+                (String.length str - 2 |> String.sub str 2)
+                filtered_nums
+          with Failure _ ->
+            let filtered_nums =
+              List.filter
+                (fun s ->
+                  s <> (s_first |> Char.escaped |> int_of_string))
+                nums
+            in
+            if List.length filtered_nums = List.length nums then false
+            else
+              check_all_nums_used_once
+                (String.length str - 1 |> String.sub str 1)
+                filtered_nums
+        else
+          let filtered_nums =
+            List.filter
+              (fun s -> s <> (s_first |> Char.escaped |> int_of_string))
+              nums
+          in
+          if List.length filtered_nums = List.length nums then false
+          else
+            check_all_nums_used_once
+              (String.length str - 1 |> String.sub str 1)
+              filtered_nums
+    | _ ->
+        check_all_nums_used_once
+          (String.length str - 1 |> String.sub str 1)
+          nums
 
-let check_solution_valid (_ : string) (_ : int * int * int * int) =
-  raise (Failure "Unimplemented: Main.play_game")
+let check_solution_valid (str : string) (nums : int list) : bool =
+  check_valid_char str
+  && check_all_nums_used_once str nums
+  && check_valid_operations str 's'
+  && Stack.create () |> check_valid_paren str
 
 let pop_with_no_return paren_stack =
   Stack.pop paren_stack;
