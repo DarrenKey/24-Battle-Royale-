@@ -22,6 +22,9 @@ let insert_test name item index lst expected =
 let distribute_test name item lst expected = 
   name >:: fun _ -> (assert_equal expected (distribute item lst))
 
+let makes_24_test name comb expected = 
+  name >:: fun _ -> (assert_equal expected (makes_24 comb))
+
 let comb_test = [
   in_set_test "[1;2;3;4] is not in the empty set" (hashset []) [1;2;3;4] false;
   in_set_test "[1;2;3;4] is in the set {(1,2,3,4)}" (hashset [(1,2,3,4)]) [1;2;3;4] true;
@@ -37,6 +40,12 @@ let comb_test = [
   distribute_test "distribute 4 into [1;2;3]" 4 [1;2;3] [[4;1;2;3];[1;4;2;3];[1;2;4;3];[1;2;3;4]];
   distribute_test "distribute 4 into [1]" 4 [1] [[4;1];[1;4]];
   distribute_test "distribute 4 into []" 4 [] [[4]];
+
+  makes_24_test "[3;3;8;8] makes 24" [3;3;8;8] true;
+  makes_24_test "[1;1;1;1] does not make 24" [1;1;1;1] false;
+  makes_24_test "[1;2;3;4] makes 24" [1;2;3;4] true;
+  makes_24_test "[4;3;2;3] does not make 24" [4;3;2;3] false;
+  makes_24_test "[2;3;5;12] makes 24" [12;5;2;3] true;
 ]
 
 let suite = "test suite for 24 battle royale" >::: List.flatten [comb_test]
