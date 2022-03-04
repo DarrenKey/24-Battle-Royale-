@@ -1,10 +1,10 @@
-# dune test
+# dune utop
 # OCAMLPARAM: unset
 # Workspace root: /home/jasong/cs3110/24-battle-royale/game
-$ /usr/bin/nproc > /tmp/dune77c99c.output 2> /dev/null
+$ /usr/bin/nproc > /tmp/dune815c33.output 2> /dev/null
 # Auto-detected concurrency: 2
 # disable binary cache
-$ /home/jasong/.opam/cs3110/bin/ocamlc.opt -config > /tmp/duneec57fa.output
+$ /home/jasong/.opam/cs3110/bin/ocamlc.opt -config > /tmp/dune4a83e0.output
 # Dune context:
 #  { name = "default"
 #  ; kind = "default"
@@ -110,3 +110,4 @@ $ /home/jasong/.opam/cs3110/bin/ocamlc.opt -config > /tmp/duneec57fa.output
 #      ; windows_unicode = false
 #      }
 #  }
+$ (cd _build/default && /home/jasong/.opam/cs3110/bin/ocamlc.opt -w @1..3@5..28@30..39@43@46..47@49..57@61..62-40 -strict-sequence -strict-formats -short-paths -keep-locs -w -24 -g -o .utop/utop.exe -output-complete-exe /home/jasong/.opam/cs3110/lib/ocaml/compiler-libs/ocamlcommon.cma /home/jasong/.opam/cs3110/lib/ocaml/compiler-libs/ocamlbytecomp.cma /home/jasong/.opam/cs3110/lib/ocaml/compiler-libs/ocamltoplevel.cma /home/jasong/.opam/cs3110/lib/findlib/findlib.cma /home/jasong/.opam/cs3110/lib/findlib/findlib_top.cma /home/jasong/.opam/cs3110/lib/result/result.cma /home/jasong/.opam/cs3110/lib/lwt/lwt.cma /home/jasong/.opam/cs3110/lib/ocaml/unix.cma -I /home/jasong/.opam/cs3110/lib/ocaml /home/jasong/.opam/cs3110/lib/ocaml/bigarray.cma -I /home/jasong/.opam/cs3110/lib/ocaml /home/jasong/.opam/cs3110/lib/mmap/mmap.cma /home/jasong/.opam/cs3110/lib/ocplib-endian/ocplib_endian.cma /home/jasong/.opam/cs3110/lib/ocplib-endian/bigstring/ocplib_endian_bigstring.cma /home/jasong/.opam/cs3110/lib/ocaml/threads/threads.cma -I /home/jasong/.opam/cs3110/lib/ocaml /home/jasong/.opam/cs3110/lib/lwt/unix/lwt_unix.cma -I /home/jasong/.opam/cs3110/lib/lwt/unix /home/jasong/.opam/cs3110/lib/react/react.cma /home/jasong/.opam/cs3110/lib/lwt_react/lwt_react.cma /home/jasong/.opam/cs3110/lib/camomile/default_config/camomileDefaultConfig.cma /home/jasong/.opam/cs3110/lib/camomile/library/camomileLibrary.cma /home/jasong/.opam/cs3110/lib/camomile/lib_default/camomileLibraryDefault.cma /home/jasong/.opam/cs3110/lib/camomile/dyn/camomileLibraryDyn.cma /home/jasong/.opam/cs3110/lib/camomile/camomile_yuge.cma /home/jasong/.opam/cs3110/lib/charInfo_width/charInfo_width.cma /home/jasong/.opam/cs3110/lib/zed/zed.cma /home/jasong/.opam/cs3110/lib/lwt_log/core/lwt_log_core.cma /home/jasong/.opam/cs3110/lib/lwt_log/lwt_log.cma /home/jasong/.opam/cs3110/lib/trie/trie.cma /home/jasong/.opam/cs3110/lib/mew/mew.cma /home/jasong/.opam/cs3110/lib/mew_vi/mew_vi.cma /home/jasong/.opam/cs3110/lib/lambda-term/lambda_term.cma -I /home/jasong/.opam/cs3110/lib/lambda-term /home/jasong/.opam/cs3110/lib/utop/uTop.cma lib/game.cma .utop/.utop.eobjs/byte/dune__exe__Utop.cmo -linkall -warn-error -31)
