@@ -4,15 +4,16 @@ end
 
 module Combinations = struct
 
-  (** [seen_combs] is the set containing all combinations that have been generated*)
-  let seen_combs num_combs = Hashtbl.create num_combs
-
   (** [list_to_tuple] converts [lst] of 4 numbers to tuple
       Example: [list_to_tuple \[1;2;3;4\]] is [(1,2,3,4)]
       Requires: lst is a list of 4 elements
       Raises: Invalid_argument *)
   let list_to_tuple lst = match lst with
   | a::b::c::d::[] -> (a, b, c, d)
+  | _ -> raise (Invalid_argument "[lst] is not a list of 4 numbers")
+
+  let add_to_set tbl lst = match List.sort compare lst with
+  | a::b::c::d::[] -> Hashtbl.add tbl (a, b, c, d) false
   | _ -> raise (Invalid_argument "[lst] is not a list of 4 numbers")
 
   (** [in_set] is whether or not the combination of 4 numbers represented by [lst] is in [tbl] 
@@ -22,10 +23,6 @@ module Combinations = struct
   let in_set tbl lst = match lst with
   | _::_::_::_::[] -> List.sort compare lst |> list_to_tuple |> Hashtbl.mem tbl 
   | _ -> raise (Invalid_argument "[lst] is not a list of 4 numbers")
-  
-  let input_is_valid lst = match lst with 
-  | _::_::_::_::[] -> true
-  | _ -> false
 
   (** [insert]s item into [lst] at [index]. [index] is where [item] would be after the insertion *)
   let insert item index lst = 
@@ -53,7 +50,7 @@ module Combinations = struct
   | h::tail -> (permute_one h (permute tail))
 
   let rec check_ops_wrapper num acc comb = match comb with
-  (* TODO: fix the floating point approximation bug!! *)
+  (* TODO: Issue #1 *)
   | [] -> (*(if 23.99 < acc && acc < 24.01 then print_endline (string_of_float acc));*) acc = num
   | h::tail -> check_ops_wrapper num (acc +. h) tail 
     || check_ops_wrapper num (acc -. h) tail
@@ -75,5 +72,5 @@ module Combinations = struct
     | [] -> false
     | h::tail -> (check_ops 24 h) || makes_24_wrapper tail
   in makes_24_wrapper (permute comb)
-    
+
 end
