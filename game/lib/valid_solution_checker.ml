@@ -227,5 +227,16 @@ let rec format_paren_multi (sol : string) =
   in
   paren_recurs 1
 
-let check_expression_tree (_ : tree) =
-  raise (Failure "Unimplemented: Main.play_game")
+let check_expression_tree (t : tree) : bool =
+  let rec evaluate_tree (t : tree) : int =
+    match t with
+    | Leaf num -> num
+    | Node (op, t1, t2) -> begin
+        match op with
+        | Addition -> evaluate_tree t1 + evaluate_tree t2
+        | Subtraction -> evaluate_tree t1 - evaluate_tree t2
+        | Multiplication -> evaluate_tree t1 * evaluate_tree t2
+        | Division -> evaluate_tree t / evaluate_tree t2
+      end
+  in
+  evaluate_tree t = 24
