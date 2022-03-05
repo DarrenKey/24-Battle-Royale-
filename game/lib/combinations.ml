@@ -56,17 +56,25 @@ module Combinations = struct
     | [] -> [ [] ]
     | h :: tail -> permute_one h (permute tail)
 
-  let rec check_ops_wrapper num acc comb =
+  let rec check_ops_wrapper
+      (num : Fraction.frac)
+      (acc : Fraction.frac)
+      (comb : int list) : bool =
     match comb with
-    (* TODO: Issue #1 *)
     | [] -> acc = num
     | h :: tail ->
-        check_ops_wrapper num (acc + h) tail
-        || check_ops_wrapper num (acc - h) tail
-        || check_ops_wrapper num (h - acc) tail
-        || check_ops_wrapper num (acc * h) tail
-        || check_ops_wrapper (num * h) acc tail
-        || check_ops_wrapper (num * acc) h tail
+        check_ops_wrapper num (Fraction.add_frac acc (h, 1)) tail
+        || check_ops_wrapper num
+             (Fraction.subtract_frac acc (h, 1))
+             tail
+        || check_ops_wrapper num
+             (Fraction.subtract_frac (h, 1) acc)
+             tail
+        || check_ops_wrapper num
+             (Fraction.multiply_frac acc (h, 1))
+             tail
+        || check_ops_wrapper num (Fraction.divide_frac acc (h, 1)) tail
+        || check_ops_wrapper num (Fraction.divide_frac (h, 1) acc) tail
 
   (** [check_ops] is true iff you can get [num] with the ordered list
       using a combination of operators. [] returns false for any number
@@ -75,7 +83,7 @@ module Combinations = struct
   let check_ops num comb =
     match comb with
     | [] -> false
-    | h :: tail -> check_ops_wrapper num h tail
+    | h :: tail -> check_ops_wrapper (num, 1) (h, 1) tail
 
   (** [makes_24] is true iff you can get 24 with the four numbers in
       list [comb] Example: [makes_24 \[1;1;4;6\]] is true Requires: comb
