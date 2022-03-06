@@ -1,8 +1,14 @@
-(* let op_types = [ ("+", Fraction.add_frac); ("-",
-   Fraction.subtract_frac); ("*", Fraction.multiply_frac); ("/",
-   Fraction.divide_frac); ] *)
+let frac_ops =
+  [
+    ("+", Fraction.add_frac);
+    ("-", Fraction.subtract_frac);
+    ("*", Fraction.multiply_frac);
+    ("/", Fraction.divide_frac);
+  ]
 
-let op_types =
+let int_ops = [ ("+", ( + )); ("-", ( - )); ("*", ( * )); ("/", ( / )) ]
+
+let float_ops =
   [ ("+", ( +. )); ("-", ( -. )); ("*", ( *. )); ("/", ( /. )) ]
 
 type 'a token =
@@ -12,7 +18,7 @@ type 'a token =
 let opnd tok =
   match tok with
   | Operand n -> n
-  | Operator _ -> raise (Failure "operand: not an operand!")
+  | Operator _ -> raise (Failure "opnd: not an operand!")
 
 let push rules stk tok =
   match tok with
@@ -31,4 +37,4 @@ let rec eval_tokens_wrapper rules stk tokens =
       | _ -> raise (Failure "eval_tokens_wrapper: invalid expression"))
   | h :: tail -> eval_tokens_wrapper rules (h |> push rules stk) tail
 
-let eval_postfix tokens = eval_tokens_wrapper op_types [] tokens
+let eval_postfix rules tokens = eval_tokens_wrapper rules [] tokens

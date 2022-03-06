@@ -20,7 +20,7 @@ module type Combinations = sig
       Raises: Invalid_argument *)
 end
 
-module Combinations = struct
+module CombinationsImpl = struct
   let list_to_tuple lst =
     match lst with
     | [ a; b; c; d ] -> (a, b, c, d)
@@ -100,3 +100,5 @@ module Combinations = struct
     in
     makes_24_wrapper (permute comb)
 end
+
+module Combinations : Combinations = CombinationsImpl
