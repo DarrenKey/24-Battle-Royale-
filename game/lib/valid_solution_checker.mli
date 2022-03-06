@@ -32,15 +32,22 @@ val check_valid_char : string -> bool
 
 val check_valid_paren : string -> char Stack.t -> bool
 (** [check_valid_paren str paren_stack] checks if the solution [s] has
-    valid matching parenthesis using [paren_stack]. *)
+    valid matching parenthesis using [paren_stack]. Legal parenthesis
+    are [] and (), but not {}. *)
 
 val check_valid_operations : string -> char -> bool
 (** [check_valid_operations s] checks if the solution [s] has valid
-    operations order. *)
+    operations order. Legal operations are + for addition, / for
+    division, - for subtraction, x or * for multipication. *)
+
+val add_back_nums : int -> int list -> int -> int list
 
 val check_all_nums_used_once : string -> int list -> bool
 (** [check_all_nums_used_once s lst] checks if the solution [s] has all
-    of the given numbers in [lst] are used once. *)
+    of the given numbers in [lst] are used exactly once.
+
+    Precondition - [lst] contains positive numbers with one digit or two
+    digits. *)
 
 (** ------------------ Overview methods
     \---------------------------------*)
@@ -67,8 +74,8 @@ val strip_spaces : string -> string
 val format_paren_multi : string -> string
 
 val check_expression_tree : tree -> bool
-(** [check_expression_tree t] checks whether or not the tree [t] equals
-    24.*)
+(** [check_expression_tree t] checks whether or not the tree [t]
+    evaluates to 24.*)
 
 val check_solution : string -> int list -> solution_output
 (** [check_solution s] combines the functions above and returns whether

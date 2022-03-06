@@ -13,6 +13,8 @@ type tree =
   | Leaf of int
   | Node of operator * tree * tree
 
+(* Makes certain that the characters in the input string only contain
+   valid characters for an expression *)
 let rec check_valid_char (str : string) : bool =
   if str = "" then true
   else
@@ -23,6 +25,8 @@ let rec check_valid_char (str : string) : bool =
         String.length str - 1 |> String.sub str 1 |> check_valid_char
     | _ -> false
 
+(* Checks that the parenthesis in the expression are balanced properly
+   using a stack *)
 let rec check_valid_paren (str : string) (paren_stack : char Stack.t) :
     bool =
   if str = "" then Stack.is_empty paren_stack
@@ -47,6 +51,9 @@ let rec check_valid_paren (str : string) (paren_stack : char Stack.t) :
           else false
     | _ -> check_valid_paren s_rest paren_stack
 
+(* Makes certain that the operations in the input string are placed in
+   legal positions: between two numbers, between a number and a
+   parenthesis, and between two parenthesis *)
 let rec check_valid_operations (str : string) (prev_char : char) : bool
     =
   if str = "" then true
@@ -73,11 +80,16 @@ let rec check_valid_operations (str : string) (prev_char : char) : bool
           (String.length str - 1 |> String.sub str 1)
           s_first
 
+(* Adds back dif_len - 1 number of elems into nums to restore the extra
+   elements that were stripped when using List.filter in the
+   check_all_nums_used_once function*)
 let rec add_back_nums (elem : int) (nums : int list) (dif_len : int) :
     int list =
   if dif_len = 1 then nums
   else add_back_nums elem (elem :: nums) (dif_len - 1)
 
+(* Checks if the four numbers in nums are all used exactly once in the
+   input string. *)
 let rec check_all_nums_used_once (str : string) (nums : int list) : bool
     =
   if str = "" then
@@ -134,14 +146,17 @@ let rec check_all_nums_used_once (str : string) (nums : int list) : bool
           (String.length str - 1 |> String.sub str 1)
           nums
 
+(* Checks if a solution string is a valid input expression by checking:
+   if the characters, operations, and parenthesis are all valid and if
+   all numbers in nums are used once *)
 let check_solution_valid (str : string) (nums : int list) : bool =
   check_valid_char str
   && check_all_nums_used_once str nums
   && check_valid_operations str 's'
   && Stack.create () |> check_valid_paren str
 
-(* Stack.pop function but returns a unit, exists to prevent a warning
-in later functions requiring Stack.pop *)
+(* Stack.pop function but returns a unit, exists to prevent a warning in
+   later functions requiring Stack.pop *)
 let pop_with_no_return paren_stack =
   Stack.pop paren_stack;
   ()
@@ -211,9 +226,10 @@ let get_operator (sol : string) (expression_index : int) =
   | _ -> Addition
 
 (* Uses no_initial_paren as a function to remove all intial parenthesis.
-Then uses find_first_expression_num to get the index of the first operator.
-Afterwards, adds the expression to the node and recurses on expression left
-of the operator and the expression right of the operator.*)
+   Then uses find_first_expression_num to get the index of the first
+   operator. Afterwards, adds the expression to the node and recurses on
+   expression left of the operator and the expression right of the
+   operator.*)
 let rec expression_tree_creator (sol : string) : tree =
   let sol = no_initial_paren sol in
   match int_of_string_opt sol with
@@ -227,14 +243,15 @@ let rec expression_tree_creator (sol : string) : tree =
             (String.sub sol (expression_index + 1)
                (String.length sol - (expression_index + 1))) )
 
-(* strip_spaces splits sol into a list from ' ' and then concatenates it *)
+(* strip_spaces splits sol into a list from ' ' and then concatenates
+   it *)
 let strip_spaces (sol : string) =
   let split_sol = String.split_on_char ' ' sol in
   List.fold_left (fun acc cur -> acc ^ cur) "" split_sol
 
-(* sol has to be >= 2, format_paren_multi works by recursing through 
-sol and finding the places where it's a number 
-and an open parenthesis right after*)
+(* sol has to be >= 2, format_paren_multi works by recursing through sol
+   and finding the places where it's a number and an open parenthesis
+   right after*)
 let rec format_paren_multi (sol : string) =
   let rec paren_recurs (index : int) =
     if index < String.length sol then
@@ -251,7 +268,7 @@ let rec format_paren_multi (sol : string) =
 open Fraction
 
 (* Checks expression tree via infix processing. Uses a fraction-library
-to prevent float rounding errors with solutions like 8/(3-8/3). *)
+   to prevent float rounding errors with solutions like 8/(3-8/3). *)
 let check_expression_tree (t : tree) : bool =
   let rec evaluate_tree (t : tree) : frac =
     match t with
@@ -268,10 +285,9 @@ let check_expression_tree (t : tree) : bool =
   in
   evaluate_tree t = (24, 1)
 
-
-(* Combines all the functions above to first check if the solution is valid, then 
-  create an expression tree and check if it equals 24. 
-  Returns Invalid, Correct, and Incorrect. *)
+(* Combines all the functions above to first check if the solution is
+   valid, then create an expression tree and check if it equals 24.
+   Returns Invalid, Correct, and Incorrect. *)
 let check_solution (sol : string) (nums : int list) : solution_output =
   let sol = sol |> strip_spaces |> format_paren_multi in
   if not (check_solution_valid sol nums) then Invalid
