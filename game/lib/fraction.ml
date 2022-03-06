@@ -8,12 +8,10 @@ let reduce_frac (n : frac) =
       let gcd_frac = gcd a b in
       (a / gcd_frac, b / gcd_frac)
 
-(* a + b *)
 let add_frac (a : frac) (b : frac) =
   match (a, b) with
   | (a1, a2), (b1, b2) -> reduce_frac ((a1 * b2) + (b1 * a2), a2 * b2)
 
-(* a - b *)
 let subtract_frac (a : frac) (b : frac) =
   match (a, b) with
   | (a1, a2), (b1, b2) -> reduce_frac ((a1 * b2) - (b1 * a2), a2 * b2)

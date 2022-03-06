@@ -3,6 +3,8 @@
     3,3,8,8, which only has 8/(3-8/3) as a solution. *)
 
 type frac = int * int
+(** frac [(a b)] represents a fraction with the numerator a and the 
+    denominator b.*)
 
 val gcd : int -> int -> int
 (** [gcd a b] finds the greatest common divisor between [a] and [b]. *)
