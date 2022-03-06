@@ -62,7 +62,6 @@ val expression_tree_creator : string -> tree
 
     Postcondition - returns a valid binary expression tree. *)
 
-val inorder_tree : tree -> int list
 val no_initial_paren : string -> string
 val strip_spaces : string -> string
 val format_paren_multi : string -> string

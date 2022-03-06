@@ -140,6 +140,8 @@ let check_solution_valid (str : string) (nums : int list) : bool =
   && check_valid_operations str 's'
   && Stack.create () |> check_valid_paren str
 
+(* Stack.pop function but returns a unit, exists to prevent a warning
+in later functions requiring Stack.pop *)
 let pop_with_no_return paren_stack =
   Stack.pop paren_stack;
   ()
@@ -208,6 +210,10 @@ let get_operator (sol : string) (expression_index : int) =
   | '/' -> Division
   | _ -> Addition
 
+(* Uses no_initial_paren as a function to remove all intial parenthesis.
+Then uses find_first_expression_num to get the index of the first operator.
+Afterwards, adds the expression to the node and recurses on expression left
+of the operator and the expression right of the operator.*)
 let rec expression_tree_creator (sol : string) : tree =
   let sol = no_initial_paren sol in
   match int_of_string_opt sol with
@@ -221,16 +227,14 @@ let rec expression_tree_creator (sol : string) : tree =
             (String.sub sol (expression_index + 1)
                (String.length sol - (expression_index + 1))) )
 
-let rec inorder_tree = function
-  | Leaf value -> [ value ]
-  | Node (value, left, right) ->
-      (inorder_tree left @ [ 999 ]) @ inorder_tree right
-
+(* strip_spaces splits sol into a list from ' ' and then concatenates it *)
 let strip_spaces (sol : string) =
   let split_sol = String.split_on_char ' ' sol in
   List.fold_left (fun acc cur -> acc ^ cur) "" split_sol
 
-(* sol has to be >= 2 *)
+(* sol has to be >= 2, format_paren_multi works by recursing through 
+sol and finding the places where it's a number 
+and an open parenthesis right after*)
 let rec format_paren_multi (sol : string) =
   let rec paren_recurs (index : int) =
     if index < String.length sol then
@@ -246,6 +250,8 @@ let rec format_paren_multi (sol : string) =
 
 open Fraction
 
+(* Checks expression tree via infix processing. Uses a fraction-library
+to prevent float rounding errors with solutions like 8/(3-8/3). *)
 let check_expression_tree (t : tree) : bool =
   let rec evaluate_tree (t : tree) : frac =
     match t with
@@ -262,6 +268,10 @@ let check_expression_tree (t : tree) : bool =
   in
   evaluate_tree t = (24, 1)
 
+
+(* Combines all the functions above to first check if the solution is valid, then 
+  create an expression tree and check if it equals 24. 
+  Returns Invalid, Correct, and Incorrect. *)
 let check_solution (sol : string) (nums : int list) : solution_output =
   let sol = sol |> strip_spaces |> format_paren_multi in
   if not (check_solution_valid sol nums) then Invalid
