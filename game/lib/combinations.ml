@@ -20,7 +20,7 @@ module type Combinations = sig
       Raises: Invalid_argument *)
 end
 
-module Combinations = struct
+module CombinationsImpl = struct
   let list_to_tuple lst =
     match lst with
     | [ a; b; c; d ] -> (a, b, c, d)
@@ -67,30 +67,75 @@ module Combinations = struct
     | [] -> [ [] ]
     | h :: tail -> permute_one h (permute tail)
 
-  let rec check_ops_wrapper
-      (num : Fraction.frac)
-      (acc : Fraction.frac)
-      (comb : int list) : bool =
-    match comb with
-    | [] -> acc = num
-    | h :: tail ->
-        check_ops_wrapper num (Fraction.add_frac acc (h, 1)) tail
-        || check_ops_wrapper num
-             (Fraction.subtract_frac acc (h, 1))
-             tail
-        || check_ops_wrapper num
-             (Fraction.subtract_frac (h, 1) acc)
-             tail
-        || check_ops_wrapper num
-             (Fraction.multiply_frac acc (h, 1))
-             tail
-        || check_ops_wrapper num (Fraction.divide_frac acc (h, 1)) tail
-        || check_ops_wrapper num (Fraction.divide_frac (h, 1) acc) tail
+  (** Construct all possible orderings of [lst] *)
+  let rec nested_fors lst i j k =
+    match (i, j, k) with
+    | -1, j, k -> []
+    | i, j, -1 -> nested_fors lst i (j - 1) (List.length lst - 1)
+    | i, -1, k ->
+        nested_fors lst (i - 1)
+          (List.length lst - 1)
+          (List.length lst - 1)
+    | i, j, k ->
+        [
+          Postfix.Operator (List.nth lst i);
+          Postfix.Operator (List.nth lst j);
+          Postfix.Operator (List.nth lst k);
+        ]
+        :: nested_fors lst i j (k - 1)
 
-  let check_ops num comb =
+  (** parses operators for fractions from the rules *)
+  let operations = Postfix.ops_of_rules Postfix.frac_rules
+
+  (** Constructs at least all possible combination of [ops] *)
+  let ops_combos ops : Fraction.frac Postfix.token list list =
+    nested_fors ops
+      (List.length ops - 1)
+      (List.length ops - 1)
+      (List.length ops - 1)
+    |> List.map (List.sort compare)
+    |> List.sort_uniq compare
+
+  (** Constructs every postfix expression possible with the numbers in
+      [comb] and the operators in [ops], then checks them to see if one
+      of them evaluates to [target] *)
+  let cons_postfix_and_check target comb ops =
+    let rec check_exprs e =
+      match e with
+      | [] -> false
+      | expr :: tail ->
+          (try Postfix.eval_postfix Postfix.frac_rules expr = (target, 1)
+           with Failure _ -> false)
+          || check_exprs tail
+    in
     match comb with
+    | [] -> failwith "cons_postfix_and_check: shouldn't happen"
+    | h :: tail ->
+        check_exprs
+          (List.map
+             (( @ ) [ Postfix.Operand h ])
+             (permute (Postfix.to_tokens tail @ ops)))
+
+  (** checks if this combination of operators [op_combos] can make
+      [target] with the numbers in [comb]*)
+  let rec check_op_combo_valid target comb op_combos =
+    match op_combos with
     | [] -> false
-    | h :: tail -> check_ops_wrapper (num, 1) (h, 1) tail
+    | op_combo :: tail ->
+        cons_postfix_and_check target comb op_combo
+        || check_op_combo_valid target comb tail
+
+  (** converts 'a list to Fraction.frac list*)
+  let rec comb_to_frac_list comb =
+    match comb with
+    | [] -> []
+    | h :: tail -> (h, 1) :: comb_to_frac_list tail
+
+  (** checks if you can make [target] with [comb] *)
+  let check_ops target comb =
+    check_op_combo_valid target
+      (comb_to_frac_list comb)
+      (ops_combos operations)
 
   let makes_24 comb =
     let rec makes_24_wrapper permutations =
@@ -100,3 +145,5 @@ module Combinations = struct
     in
     makes_24_wrapper (permute comb)
 end
+
+module Combinations : Combinations = CombinationsImpl

@@ -1,6 +1,6 @@
 open OUnit2
 open Game
-open Combinations.Combinations
+open Combinations.CombinationsImpl
 open Valid_solution_checker
 
 let valid_solution_tests = []
