@@ -93,6 +93,8 @@ module CombinationsImpl = struct
       (List.length ops - 1)
       (List.length ops - 1)
       (List.length ops - 1)
+    |> List.map (List.sort compare)
+    |> List.sort_uniq compare
 
   (** Constructs every postfix expression possible with the numbers in
       [comb] and the operators in [ops], then checks them to see if one
