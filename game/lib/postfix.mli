@@ -1,10 +1,17 @@
-val frac_ops :
+val frac_rules :
   (string * (Fraction.frac -> Fraction.frac -> Fraction.frac)) list
 
-val int_ops : (string * (int -> int -> int)) list
-val float_ops : (string * (float -> float -> float)) list
+val int_rules : (string * (int -> int -> int)) list
+val float_rules : (string * (float -> float -> float)) list
 
-type 'a token
+type 'a token =
+  | Operand of 'a
+  | Operator of string
+
+val to_tokens : 'a list -> 'a token list
+(** [to_tokens lst] is [lst] of operands converted to tokens *)
+
+val ops_of_rules : (string * ('a -> 'a -> 'a)) list -> string list
 
 val opnd : 'a token -> 'a
 (** [opnd tok] is the operand represented by token. Raises: [Failure]

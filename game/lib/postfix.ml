@@ -1,4 +1,4 @@
-let frac_ops =
+let frac_rules =
   [
     ("+", Fraction.add_frac);
     ("-", Fraction.subtract_frac);
@@ -6,9 +6,10 @@ let frac_ops =
     ("/", Fraction.divide_frac);
   ]
 
-let int_ops = [ ("+", ( + )); ("-", ( - )); ("*", ( * )); ("/", ( / )) ]
+let int_rules =
+  [ ("+", ( + )); ("-", ( - )); ("*", ( * )); ("/", ( / )) ]
 
-let float_ops =
+let float_rules =
   [ ("+", ( +. )); ("-", ( -. )); ("*", ( *. )); ("/", ( /. )) ]
 
 type 'a token =
@@ -25,8 +26,9 @@ let push rules stk tok =
   | Operand _ -> tok :: stk
   | Operator op -> (
       match stk with
-      | a :: b :: tail ->
-          Operand ((List.assoc op rules) (opnd b) (opnd a)) :: tail
+      | a :: b :: tail -> (
+          try Operand ((List.assoc op rules) (opnd b) (opnd a)) :: tail
+          with Division_by_zero -> raise (Failure "division by zero"))
       | _ -> raise (Failure ("push: " ^ op)))
 
 let rec eval_tokens_wrapper rules stk tokens =
@@ -38,3 +40,16 @@ let rec eval_tokens_wrapper rules stk tokens =
   | h :: tail -> eval_tokens_wrapper rules (h |> push rules stk) tail
 
 let eval_postfix rules tokens = eval_tokens_wrapper rules [] tokens
+
+let rec to_tokens lst =
+  match lst with
+  | [] -> []
+  | h :: tail -> Operand h :: to_tokens tail
+
+let rec ops_of_rules rules =
+  match rules with
+  | [] -> []
+  | h :: tail ->
+      (match h with
+      | a, b -> a)
+      :: ops_of_rules tail
