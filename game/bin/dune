@@ -7,3 +7,8 @@
  (name combs_printer)
  (modules combs_printer)
  (libraries Game))
+
+(executable
+ (name solo_game)
+ (modules solo_game)
+ (libraries Game ANSITerminal))
