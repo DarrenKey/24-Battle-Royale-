@@ -11,4 +11,4 @@
 (executable
  (name solo_game)
  (modules solo_game)
- (libraries Game ANSITerminal))
+ (libraries Game ANSITerminal lwt))

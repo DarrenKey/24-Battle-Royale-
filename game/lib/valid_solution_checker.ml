@@ -256,7 +256,8 @@ let rec format_paren_multi (sol : string) =
   let rec paren_recurs (index : int) =
     if index < String.length sol then
       match (sol.[index - 1], sol.[index]) with
-      | '0' .. '9', '(' | '0' .. '9', '[' ->
+      | '0' .. '9', '(' | '0' .. '9', '[' | ')', '(' |']', '(' |')', '[' 
+      |']', '[' | ')', '0' .. '9' | ']', '0' .. '9'->
           (format_paren_multi (String.sub sol 0 index) ^ "*")
           ^ format_paren_multi
               (String.sub sol index (String.length sol - index))
