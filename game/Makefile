@@ -12,6 +12,9 @@ test:
 solo-play:
 	OCAMLRUNPARAM=b dune exec bin/solo_game.exe
 
+combos:
+	OCAMLRUNPARAM=b dune exec bin/combs_printer.exe
+
 zip:
 	rm -f 24_battle_royale.zip
 	zip -r 24_battle_royale.zip . -x@exclude.lst

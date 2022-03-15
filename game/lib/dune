@@ -1,3 +1,4 @@
 (library
  (name game)
- (public_name Game))
+ (public_name Game)
+ (libraries lwt lwt.unix))

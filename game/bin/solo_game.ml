@@ -1,8 +1,9 @@
 open Game.Valid_solution_checker
+open Game.Timer
 
 (** [combo_to_list str] converts [str] into an int list.
 
-    Precondiiton - str is a string that only contains four positive
+    Precondition - str is a string that only contains four positive
     integers separated by one space each. *)
 let combo_to_list str =
   String.split_on_char ' ' str
@@ -20,6 +21,7 @@ let rec play_game in_channel comb =
     let line = retrieve_line comb in_channel in
     print_endline ("Enter solution for: " ^ line);
     print_string "> ";
+    timer line;
     match read_line () with
     | "quit" ->
         flush stdout;
