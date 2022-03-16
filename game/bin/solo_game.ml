@@ -9,42 +9,49 @@ let combo_to_list str =
   String.split_on_char ' ' str
   |> List.map (fun num -> int_of_string num)
 
-(** [retrieve_line str in_channel] retrieves a new input string from
-    [in_channel] if there currently is none stored in [str]. *)
-let retrieve_line str in_channel =
-  if str = "" then input_line in_channel else str
+(** [retrieve_combo str arr] retrieves a random element from [arr] if
+    [str] is an empty string. Else it gives back [str]. *)
+let retrieve_combo str arr =
+  if str = "" then begin
+    Random.self_init ();
+    let combo_key = Array.length arr |> Random.int in
+    Array.get arr combo_key
+  end
+  else str
 
-(** [play_game in_channel comb] handles the user inputs to actually play
-    the game. *)
-let rec play_game in_channel comb =
+(** [get_combination in_channel] creates an array with each element
+    being a line from [in_channel]. *)
+let rec get_combination in_channel =
   try
-    let line = retrieve_line comb in_channel in
-    print_endline ("Enter solution for: " ^ line);
-    print_string "> ";
-    timer line;
-    match read_line () with
-    | "quit" ->
-        flush stdout;
-        close_in in_channel;
-        print_endline "Thank you for playing!"
-    | ans -> begin
-        match check_solution ans (combo_to_list line) with
-        | Correct ->
-            print_endline "";
-            print_endline "Nice Job! Here's another one";
-            play_game in_channel ""
-        | Incorrect ->
-            print_endline "";
-            print_endline "Incorrect, but nice attempt! Try again!";
-            play_game in_channel line
-        | Invalid ->
-            print_endline "";
-            print_endline "Invalid input, but nice attempt! Try again!";
-            play_game in_channel line
-      end
-  with error ->
+    let str = input_line in_channel in
+    get_combination in_channel |> Array.append (Array.make 1 str)
+  with End_of_file ->
     close_in_noerr in_channel;
-    print_endline "Unknown error has occured. Thank you for playing!"
+    Array.make 0 ""
+
+(** [play_game combo_array comb] handles the user inputs to actually
+    play the game. *)
+let rec play_game combo_array comb =
+  let line = retrieve_combo comb combo_array in
+  print_endline ("Enter solution for: " ^ line);
+  print_string "> ";
+  match read_line () with
+  | "quit" -> print_endline "Thank you for playing!"
+  | ans -> begin
+      match check_solution ans (combo_to_list line) with
+      | Correct ->
+          print_endline "";
+          print_endline "Nice Job! Here's another one";
+          play_game combo_array ""
+      | Incorrect ->
+          print_endline "";
+          print_endline "Incorrect, but nice attempt! Try again!";
+          play_game combo_array line
+      | Invalid ->
+          print_endline "";
+          print_endline "Invalid input, but nice attempt! Try again!";
+          play_game combo_array line
+    end
 
 (** [main ()] prompts the user to play the solo game, then starts it. *)
 let main () =
@@ -61,7 +68,7 @@ let main () =
       let in_channel =
         open_in ("assets" ^ Filename.dir_sep ^ "combos.txt")
       in
-      play_game in_channel ""
+      play_game (get_combination in_channel) ""
 
 (* Execute the game engine. *)
 let () = main ()
