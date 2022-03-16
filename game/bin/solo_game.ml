@@ -33,10 +33,16 @@ open Lwt
 (** [play_game combo_array comb] handles the user inputs to actually
     play the game. *)
 
+let create_timer line score =
+  timer line (fun () ->
+      Lwt_io.printf
+        "\nTimes up. Thanks for playing! Final score: %N\n%!" score
+      |> ignore;
+      exit 0)
+
 let rec play_game combo_array score comb =
   let line = retrieve_combo comb combo_array in
-  Lwt_io.printf "Current Score: %N\nEnter solution for: %s%!" score line
-  |> ignore;
+  Lwt_io.printf "Current Score: %N\n%!" score |> ignore;
   let time_counter, repeated_timer =
     timer line (fun () ->
         Lwt_io.printf
@@ -44,27 +50,36 @@ let rec play_game combo_array score comb =
         |> ignore;
         exit 0)
   in
-
-  Lwt_io.read_line Lwt_io.stdin >>= function
-  | "quit" -> Lwt_io.printl "Thank you for playing!"
-  | ans -> begin
-      match check_solution ans (combo_to_list line) with
-      | Correct ->
-          Lwt_io.printl "\nNice Job! Here's another one\n" |> ignore;
-          cancel time_counter;
-          play_game combo_array (score + 1) ""
-      | Incorrect ->
-          Lwt_io.printl "\nIncorrect, but nice attempt! Try again!\n"
-          |> ignore;
-          cancel time_counter;
-          play_game combo_array score line
-      | Invalid ->
-          Lwt_io.printl
-            "\nInvalid input, but nice attempt! Try again!\n"
-          |> ignore;
-          cancel time_counter;
-          play_game combo_array score line
-    end
+  let rec enter_sol
+      ~time_counter
+      ~repeated_timer
+      ~line
+      ~combo_array
+      ~score =
+    Lwt_io.printf "Enter solution for: %s\n>%!" line |> ignore;
+    Lwt_io.read_line Lwt_io.stdin >>= function
+    | "quit" -> Lwt_io.printl "Thank you for playing!"
+    | ans -> begin
+        match check_solution ans (combo_to_list line) with
+        | Correct ->
+            Lwt_io.printl "\nNice Job! Here's another one\n" |> ignore;
+            cancel time_counter;
+            cancel repeated_timer;
+            play_game combo_array (score + 1) ""
+        | Incorrect ->
+            Lwt_io.printl "\nIncorrect, but nice attempt! Try again!\n"
+            |> ignore;
+            enter_sol ~time_counter ~repeated_timer ~line ~combo_array
+              ~score
+        | Invalid ->
+            Lwt_io.printl
+              "\nInvalid input, but nice attempt! Try again!\n"
+            |> ignore;
+            enter_sol ~time_counter ~repeated_timer ~line ~combo_array
+              ~score
+      end
+  in
+  enter_sol ~time_counter ~repeated_timer ~line ~combo_array ~score
 
 (** [main ()] prompts the user to play the solo game, then starts it. *)
 let main () =
