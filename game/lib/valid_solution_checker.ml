@@ -199,22 +199,32 @@ let no_initial_paren (sol : string) : string =
    index of the first +. *)
 let find_first_expression_num (sol : string) : int =
   let paren_stack = Stack.create () in
-  let rec find_paren (index : int) (last_multi_div : int) =
-    if index >= String.length sol then last_multi_div
+  let rec find_paren
+      (index : int)
+      (last_multi_div : int)
+      (last_add_sub : int)
+      (found_add_sub : bool) =
+    if index >= String.length sol then
+      if found_add_sub then last_add_sub else last_multi_div
     else
       match sol.[index] with
       | '(' | '[' ->
           Stack.push '(' paren_stack;
-          find_paren (index + 1) last_multi_div
+          find_paren (index + 1) last_multi_div last_add_sub
+            found_add_sub
       | ')' | ']' ->
           pop_with_no_return paren_stack;
-          find_paren (index + 1) last_multi_div
-      | ('+' | '-') when Stack.is_empty paren_stack -> index
+          find_paren (index + 1) last_multi_div last_add_sub
+            found_add_sub
+      | ('+' | '-') when Stack.is_empty paren_stack ->
+          find_paren (index + 1) last_multi_div index true
       | ('*' | 'x' | '/') when Stack.is_empty paren_stack ->
-          find_paren (index + 1) index
-      | _ -> find_paren (index + 1) last_multi_div
+          find_paren (index + 1) index last_add_sub found_add_sub
+      | _ ->
+          find_paren (index + 1) last_multi_div last_add_sub
+            found_add_sub
   in
-  find_paren 0 0
+  find_paren 0 0 0 false
 
 (* Convert the character operators to the type operator *)
 let get_operator (sol : string) (expression_index : int) =
@@ -256,8 +266,14 @@ let rec format_paren_multi (sol : string) =
   let rec paren_recurs (index : int) =
     if index < String.length sol then
       match (sol.[index - 1], sol.[index]) with
-      | '0' .. '9', '(' | '0' .. '9', '[' | ')', '(' |']', '(' |')', '[' 
-      |']', '[' | ')', '0' .. '9' | ']', '0' .. '9'->
+      | '0' .. '9', '('
+      | '0' .. '9', '['
+      | ')', '('
+      | ']', '('
+      | ')', '['
+      | ']', '['
+      | ')', '0' .. '9'
+      | ']', '0' .. '9' ->
           (format_paren_multi (String.sub sol 0 index) ^ "*")
           ^ format_paren_multi
               (String.sub sol index (String.length sol - index))

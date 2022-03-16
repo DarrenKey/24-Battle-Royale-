@@ -3,7 +3,6 @@ open Game
 open Combinations.CombinationsImpl
 open Valid_solution_checker
 
-
 (** [hashset] is the hash set of [lst] implemented with a Hashtbl
     Example: [hashset \[1;2;3;4\]] is {1,2,3,4} *)
 let hashset lst =
@@ -63,19 +62,24 @@ let comb_test =
     makes_24_test "[2;3;5;12] makes 24" [ 12; 5; 2; 3 ] true;
   ]
 
-let check_sol name sol nums expected= 
+let check_sol name sol nums expected =
   name >:: fun _ -> assert_equal expected (check_solution sol nums)
 
-let valid_sol_tests = [
-  check_sol "(1+1)(1+11) makes 24" "(1+1)(1+11)" [1;1;1;11] Correct;
-  check_sol "(1+1+1)8 makes 24" "(1+1+1)8" [1;1;1;8] Correct;
-  check_sol "(1+1+1)(8) makes 24" "(1+1+1)8" [1;1;1;8] Correct;
-  check_sol "(1+1+1)*(8) makes 24" "(1+1+1)8" [1;1;1;8] Correct;
-  check_sol "(1+1+1)*8 makes 24" "(1+1+1)8" [1;1;1;8] Correct;
-  check_sol "(1+1+1)*8) invalid input" "(1+1+1)8)" [1;1;1;8] Invalid;
+let valid_sol_tests =
+  [
+    check_sol "(1+1)(1+11) makes 24" "(1+1)(1+11)" [ 1; 1; 1; 11 ]
+      Correct;
+    check_sol "(1+1+1)8 makes 24" "(1+1+1)8" [ 1; 1; 1; 8 ] Correct;
+    check_sol "(1+1+1)(8) makes 24" "(1+1+1)8" [ 1; 1; 1; 8 ] Correct;
+    check_sol "(1+1+1)*(8) makes 24" "(1+1+1)8" [ 1; 1; 1; 8 ] Correct;
+    check_sol "(1+1+1)*8 makes 24" "(1+1+1)8" [ 1; 1; 1; 8 ] Correct;
+    check_sol "(1+1+1)*8) invalid input" "(1+1+1)8)" [ 1; 1; 1; 8 ]
+      Invalid;
+    check_sol "8/(3-8/3) makes 24" "8/(3-8/3)" [ 3; 3; 8; 8 ] Correct;
+    check_sol "3*10-4-2 makes 24" "3*10-4-2" [ 3; 10; 4; 2 ] Correct;
+  ]
 
-  check_sol "8/(3-8/3) makes 24" "8/(3-8/3)" [3;3;8;8] Correct;
-]
+let suite =
+  "test suite for game" >::: List.flatten [ comb_test; valid_sol_tests ]
 
-let suite = "test suite for game" >::: List.flatten [ comb_test ; valid_sol_tests]
 let _ = run_test_tt_main suite
