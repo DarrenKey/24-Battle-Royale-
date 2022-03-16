@@ -29,28 +29,41 @@ let rec get_combination in_channel =
     close_in_noerr in_channel;
     Array.make 0 ""
 
+open Lwt
 (** [play_game combo_array comb] handles the user inputs to actually
     play the game. *)
-let rec play_game combo_array comb =
+
+let rec play_game combo_array score comb =
   let line = retrieve_combo comb combo_array in
-  print_endline ("Enter solution for: " ^ line);
-  print_string "> ";
-  match read_line () with
-  | "quit" -> print_endline "Thank you for playing!"
+  Lwt_io.printf "Current Score: %N\nEnter solution for: %s%!" score line
+  |> ignore;
+  let time_counter, repeated_timer =
+    timer line (fun () ->
+        Lwt_io.printf
+          "\nTimes up. Thanks for playing! Final score: %N\n%!" score
+        |> ignore;
+        exit 0)
+  in
+
+  Lwt_io.read_line Lwt_io.stdin >>= function
+  | "quit" -> Lwt_io.printl "Thank you for playing!"
   | ans -> begin
       match check_solution ans (combo_to_list line) with
       | Correct ->
-          print_endline "";
-          print_endline "Nice Job! Here's another one";
-          play_game combo_array ""
+          Lwt_io.printl "\nNice Job! Here's another one\n" |> ignore;
+          cancel time_counter;
+          play_game combo_array (score + 1) ""
       | Incorrect ->
-          print_endline "";
-          print_endline "Incorrect, but nice attempt! Try again!";
-          play_game combo_array line
+          Lwt_io.printl "\nIncorrect, but nice attempt! Try again!\n"
+          |> ignore;
+          cancel time_counter;
+          play_game combo_array score line
       | Invalid ->
-          print_endline "";
-          print_endline "Invalid input, but nice attempt! Try again!";
-          play_game combo_array line
+          Lwt_io.printl
+            "\nInvalid input, but nice attempt! Try again!\n"
+          |> ignore;
+          cancel time_counter;
+          play_game combo_array score line
     end
 
 (** [main ()] prompts the user to play the solo game, then starts it. *)
@@ -68,7 +81,8 @@ let main () =
       let in_channel =
         open_in ("assets" ^ Filename.dir_sep ^ "combos.txt")
       in
-      play_game (get_combination in_channel) ""
+      play_game (get_combination in_channel) 0 ""
+      |> Lwt_main.run |> ignore
 
 (* Execute the game engine. *)
 let () = main ()
