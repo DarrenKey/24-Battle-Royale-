@@ -1,6 +1,6 @@
 open Lwt
 
-let noti_time_list = [ 20; 5 ]
+let noti_time_list = [ 40; 20; 5 ]
 
 let noti_time time_left combos =
   if List.mem time_left noti_time_list then
@@ -24,7 +24,7 @@ let rec incr_timer (incr : int) combos (time_left : int) =
    Requires: incr > 0, time_limit > 0*)
 let timer
     ?(incr : int = 1)
-    ?(time_limit : int = 20)
+    ?(time_limit : int = 40)
     (combos : string)
     (func_to_run : unit -> unit) =
   let repeated_timer = incr_timer incr combos (time_limit - 1) in
