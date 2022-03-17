@@ -16,8 +16,8 @@ combos:
 	OCAMLRUNPARAM=b dune exec bin/combs_printer.exe
 
 zip:
-	rm -f 24_battle_royale.zip
-	zip -r 24_battle_royale.zip . -x@exclude.lst
+	rm -f 24_battle_royal
+	zip -r 24_battle_royale.zip . 
 
 clean:
 	dune clean
