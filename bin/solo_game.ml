@@ -40,6 +40,25 @@ let create_timer line score =
       |> ignore;
       exit 0)
 
+let help_menu =
+  "\n\
+   ~24 Battle Royale: Solo Edition Help Menu~ \n\n\
+   You will be given 4 numbers. Use each of them exactly once to \
+   create 24. When the timer hits 0, the game ends.\n\n\
+   Valid arithmetic operators are:\n\
+   Addition: + \n\
+   Subtraction: - \n\
+   Multiplication: x, * \n\
+   Division: / \n\
+   Parenthesis: ( ) [ ] \n\n\
+   A valid expression is:\n\
+   -Only uses the four numbers and valid operations\n\
+   -Proper opening and closing parentheses\n\n\
+   Valid non-expression commands are:\n\
+   \"quit\": exits the game\n\
+   \"help\": opens up the help menu\n\n\
+   Hope this helped! Good luck!\n"
+
 let rec play_game combo_array score comb =
   let line = retrieve_combo comb combo_array in
   Lwt_io.printf "Current Score: %N\n%!" score |> ignore;
@@ -58,7 +77,11 @@ let rec play_game combo_array score comb =
       ~score =
     Lwt_io.printf "Enter solution for: %s\n>%!" line |> ignore;
     Lwt_io.read_line Lwt_io.stdin >>= function
-    | "quit" -> Lwt_io.printl "Thank you for playing!"
+    | "quit" | "\"quit\"" -> Lwt_io.printl "Thank you for playing!"
+    | "help" ->
+        Lwt_io.printl help_menu |> ignore;
+        enter_sol ~time_counter ~repeated_timer ~line ~combo_array
+          ~score
     | ans -> begin
         match check_solution ans (combo_to_list line) with
         | Correct ->
@@ -81,14 +104,11 @@ let rec play_game combo_array score comb =
   in
   enter_sol ~time_counter ~repeated_timer ~line ~combo_array ~score
 
-(** [main ()] prompts the user to play the solo game, then starts it. *)
-let main () =
-  ANSITerminal.print_string [ ANSITerminal.red ]
-    "\n\n\
-     Welcome to 24 Battle Royale: Solo Edition! Given four numbers, \
-     use addition, subtraction, multiplication, and division to make \
-     24. Press enter to start the game or type \"quit\" to exit.\n";
-  match read_line () with
+(** [main_quit_and_enter input] checks if [input] is quit or something
+    else and prints accordingly. Used as a helper function for
+    [main ()]. *)
+let main_quit_and_enter input =
+  match input with
   | "quit" | "\"quit\"" ->
       print_endline
         "Thank you for trying out 24 Battle Royale: Solo Edition!"
@@ -98,6 +118,23 @@ let main () =
       in
       play_game (get_combination in_channel) 0 ""
       |> Lwt_main.run |> ignore
+
+(** [main ()] prompts the user to play the solo game, then starts it. *)
+let main () =
+  ANSITerminal.print_string [ ANSITerminal.red ]
+    "\n\n\
+     Welcome to 24 Battle Royale: Solo Edition! Given four numbers, \
+     use addition, subtraction, multiplication, and division to make \
+     24. Don't let the timer reach 0 or else the game ends! Press \
+     enter to start the game or type \"quit\" to exit. Type \"help\" \
+     for the help menu.\n";
+  match read_line () with
+  | "help" | "\"help\"" ->
+      print_endline help_menu;
+      ANSITerminal.print_string [ ANSITerminal.red ]
+        "Press enter to start the game. Or type \"quit\" to exit.\n";
+      read_line () |> main_quit_and_enter
+  | input -> main_quit_and_enter input
 
 (* Execute the game engine. *)
 let () = main ()
