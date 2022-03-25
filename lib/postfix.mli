@@ -23,3 +23,5 @@ val eval_postfix :
     operations specified in [rules]. Example: 12+34+* should evaluate to
     21. Raises: [Failure] when [tokens] does not constitute a valid
     postfix expression *)
+
+val postfix_to_infix : int token list -> string

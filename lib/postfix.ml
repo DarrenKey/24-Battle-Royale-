@@ -41,6 +41,28 @@ let rec eval_tokens_wrapper rules stk tokens =
 
 let eval_postfix rules tokens = eval_tokens_wrapper rules [] tokens
 
+exception NotValidPostFix
+
+(** Requires: [tokens] is a valid postfix representation. *)
+let postfix_to_infix tokens =
+  let op_stack = Stack.create () in
+  let rec main_loop token_list =
+    match token_list with
+    | [] -> ()
+    | h :: t -> (
+        match h with
+        | Operand x ->
+            Stack.push (string_of_int x) op_stack;
+            main_loop t
+        | Operator x ->
+            let first = Stack.pop op_stack in
+            let second = Stack.pop op_stack in
+            Stack.push ("(" ^ second ^ x ^ first ^ ")") op_stack;
+            main_loop t)
+  in
+  main_loop tokens;
+  Stack.pop op_stack
+
 let rec to_tokens lst =
   match lst with
   | [] -> []
