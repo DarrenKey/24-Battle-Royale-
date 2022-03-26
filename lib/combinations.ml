@@ -189,7 +189,7 @@ module CombinationsImpl = struct
     in
     get_target_wrapper target (permute comb)
 
-  let postfix_solution lst =
+  let solution_to lst =
     get_target 24 lst
     |> List.map (fun x ->
            match x with
