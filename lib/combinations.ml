@@ -18,6 +18,9 @@ module type Combinations = sig
       list [comb] Example: [makes_24 \[1;1;4;6\]] is true. Requires:
       comb is a list of 4 positive numbers less than or equal to 12.
       Raises: Invalid_argument *)
+
+  (** Generates the solution to [lst] in Postfix. Requires: [lst] can
+      get to 24 *)
 end
 
 module CombinationsImpl = struct
@@ -96,6 +99,11 @@ module CombinationsImpl = struct
     |> List.map (List.sort compare)
     |> List.sort_uniq compare
 
+  let cons_postfix comb ops =
+    List.map
+      (( @ ) [ Postfix.Operand (List.hd comb) ])
+      (permute (Postfix.to_tokens (List.tl comb) @ ops))
+
   (** Constructs every postfix expression possible with the numbers in
       [comb] and the operators in [ops], then checks them to see if one
       of them evaluates to [target] *)
@@ -108,13 +116,7 @@ module CombinationsImpl = struct
            with Failure _ -> false)
           || check_exprs tail
     in
-    match comb with
-    | [] -> failwith "cons_postfix_and_check: shouldn't happen"
-    | h :: tail ->
-        check_exprs
-          (List.map
-             (( @ ) [ Postfix.Operand h ])
-             (permute (Postfix.to_tokens tail @ ops)))
+    check_exprs (cons_postfix comb ops)
 
   (** checks if this combination of operators [op_combos] can make
       [target] with the numbers in [comb]*)
@@ -137,13 +139,63 @@ module CombinationsImpl = struct
       (comb_to_frac_list comb)
       (ops_combos operations)
 
-  let makes_24 comb =
-    let rec makes_24_wrapper permutations =
+  let makes_target target comb =
+    let rec makes_target_wrapper target permutations =
       match permutations with
       | [] -> false
-      | h :: tail -> check_ops 24 h || makes_24_wrapper tail
+      | h :: tail ->
+          check_ops target h || makes_target_wrapper target tail
     in
-    makes_24_wrapper (permute comb)
+    makes_target_wrapper target (permute comb)
+
+  let makes_24 comb = makes_target 24 comb
+
+  (** [None] if there are no solutions, [Some expr] if expr evaluates to
+      24 *)
+  let get_valid_postfix target comb ops =
+    let rec check_exprs e =
+      match e with
+      | [] -> None
+      | expr :: tail ->
+          if
+            try
+              Postfix.eval_postfix Postfix.frac_rules expr = (target, 1)
+            with Failure _ -> false
+          then Some expr
+          else check_exprs tail
+    in
+    check_exprs (cons_postfix comb ops)
+
+  let get_valid_ops t c =
+    let rec get_valid_ops_wrapper target comb op_combos =
+      match op_combos with
+      | [] -> None
+      | op_combo :: tail -> (
+          match get_valid_postfix target comb op_combo with
+          | None -> get_valid_ops_wrapper target comb tail
+          | Some expr -> Some expr)
+    in
+    get_valid_ops_wrapper t (comb_to_frac_list c)
+      (ops_combos operations)
+
+  let get_target target comb =
+    let rec get_target_wrapper target permutations =
+      match permutations with
+      | [] -> raise Not_found
+      | h :: tail -> (
+          match get_valid_ops target h with
+          | None -> get_target_wrapper target tail
+          | Some expr -> expr)
+    in
+    get_target_wrapper target (permute comb)
+
+  let postfix_solution lst =
+    get_target 24 lst
+    |> List.map (fun x ->
+           match x with
+           | Postfix.Operand (num, _) -> Postfix.Operand num
+           | Postfix.Operator x -> Postfix.Operator x)
+    |> Postfix.postfix_to_infix
 end
 
 module Combinations : Combinations = CombinationsImpl
