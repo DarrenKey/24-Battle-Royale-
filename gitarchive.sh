@@ -1,3 +1,5 @@
+# Run it using "bash gitarchive.sh <branch-name>"
+
 if ! git tag archive/$1 $1
 then
     echo "> tagging failed"
