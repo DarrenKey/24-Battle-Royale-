@@ -1,50 +1,48 @@
-let () = print_endline "Hello, World!"
+let string_of_client client =
+  client |> Ws.Client.id |> Ws.Client.Id.to_int |> string_of_int
 
-open Opium
+let server = Ws.Server.create ~port:3000
+let get_client_id client = client |> Ws.Client.id |> Ws.Client.Id.to_int
 
-module Person = struct
-  type t = {
-    name : string;
-    age : int;
-  }
+let on_connect client_set host_id client =
+  if Hashtbl.length client_set = 0 then
+    (host_id := get_client_id client;
+     Ws.Client.send client
+       "You're the host! Type /start to start the game.")
+    |> ignore
+  else
+    Ws.Client.send client "Waiting for the host to start the game..."
+    |> ignore;
+  Hashtbl.add client_set (get_client_id client) false;
+  Lwt.return ()
 
-  let yojson_of_t t =
-    `Assoc [ ("name", `String t.name); ("age", `Int t.age) ]
+let run_start_setup server client =
+  Ws.Server.broadcast_to_others server client "Game starting!"
 
-  let t_of_yojson yojson =
-    match yojson with
-    | `Assoc [ ("name", `String name); ("age", `Int age) ] ->
-        { name; age }
-    | _ -> failwith "invalid person json"
-end
+let handler client_set host_id client message =
+  let client_id = get_client_id client in
+  match String.split_on_char ' ' message with
+  | [ "debug_host" ] -> Ws.Client.send client (!host_id |> string_of_int)
+  | [ "/start" ] ->
+      if !host_id = client_id then run_start_setup server client
+      else Ws.Client.send client "You are not the host!"
+  | [ "/quit" ] ->
+      Hashtbl.remove client_set client_id;
+      Ws.Server.close server client
+  | [ a; b; c; d; e ] when a = "evaluate" ->
+      Game.Combinations.Combinations.solution_to
+        (List.map int_of_string [ b; c; d; e ])
+      |> Ws.Client.send client
+  | broadcast_message ->
+      Ws.Server.broadcast_to_others server client
+        (Printf.sprintf "%s: %s"
+           (string_of_client client)
+           (String.concat " " broadcast_message))
 
-let print_person_handler req =
-  let name = Router.param req "name" in
-  let age = Router.param req "age" |> int_of_string in
-  let person = { Person.name; age } |> Person.yojson_of_t in
-  Lwt.return (Response.of_json person)
-
-let update_person_handler req =
-  let open Lwt.Syntax in
-  let+ json = Request.to_json_exn req in
-  let person = Person.t_of_yojson json in
-  Logs.info (fun m -> m "Received person: %s" person.Person.name);
-  Response.of_json (`Assoc [ ("message", `String "Person saved") ])
-
-let streaming_handler req =
-  let length = Body.length req.Request.body in
-  let content = Body.to_stream req.Request.body in
-  let body = Lwt_stream.map String.uppercase_ascii content in
-  Response.make ~body:(Body.of_stream ?length body) () |> Lwt.return
-
-let print_param_handler req =
-  Printf.sprintf "Hello, %s\n" (Router.param req "name")
-  |> Response.of_plain_text |> Lwt.return
-
-let _ =
-  App.empty
-  |> App.post "/hello/stream" streaming_handler
-  |> App.get "/hello/:name" print_param_handler
-  |> App.get "/person/:name/:age" print_person_handler
-  |> App.patch "/person" update_person_handler
-  |> App.run_command
+let () =
+  let client_set : (int, bool) Hashtbl.t = Hashtbl.create 50 in
+  let host_id = ref 0 in
+  let helper_connect = on_connect client_set host_id in
+  Lwt_main.run
+    (Ws.Server.run server (Some helper_connect)
+       (handler client_set host_id))

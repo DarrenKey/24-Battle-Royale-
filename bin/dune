@@ -1,7 +1,9 @@
 (executable
  (name main)
  (modules main)
- (libraries Game lwt lwt.unix opium))
+ (libraries Game lwt lwt.unix websocket ws)
+ (preprocess
+  (pps lwt_ppx)))
 
 (executable
  (name combs_printer)

@@ -21,6 +21,8 @@ module type Combinations = sig
 
   (** Generates the solution to [lst] in Postfix. Requires: [lst] can
       get to 24 *)
+
+  val solution_to : int list -> string
 end
 
 module CombinationsImpl = struct
