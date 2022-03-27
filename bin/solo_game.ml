@@ -1,6 +1,7 @@
 open Game.Valid_solution_checker
 open Game.Timer
 open Game.Combinations
+open Lwt
 
 (** [combo_to_list str] converts [str] into an int list.
 
@@ -30,10 +31,7 @@ let rec get_combination in_channel =
     close_in_noerr in_channel;
     Array.make 0 ""
 
-open Lwt
-(** [play_game combo_array comb] handles the user inputs to actually
-    play the game. *)
-
+(** [help_menu] is a string representing the game's help menu. *)
 let help_menu =
   "\n\
    ~24 Battle Royale: Solo Edition Help Menu~ \n\n\
@@ -55,6 +53,41 @@ let help_menu =
    \"help\": Opens up the help menu\n\n\
    Hope this helped! Good luck!\n"
 
+(** [make_two_sized str] returns a string of length two if the length of
+    [str] is two or one. *)
+let make_two_sized str =
+  if String.length str < 2 then " " ^ str else str
+
+(** [line_array line] returns an array representation of [line] if
+    [line] is a string of four integers, with length < 3, with exactly
+    one space in between each integer. *)
+let line_array line =
+  let num_list = String.split_on_char ' ' line in
+  let rec line_to_array num_list =
+    match num_list with
+    | h :: t ->
+        line_to_array t
+        |> Array.append (make_two_sized h |> Array.make 1)
+    | [] -> Array.make 0 ""
+  in
+  line_to_array num_list
+
+let nums_to_cards line =
+  let combo_array = line_array line in
+  "\n.--------. .--------. .--------. .--------.\n|"
+  ^ Array.get combo_array 0 ^ ".--.  | |" ^ Array.get combo_array 1
+  ^ ".--.  | |" ^ Array.get combo_array 2 ^ ".--.  | |"
+  ^ Array.get combo_array 3
+  ^ ".--.  |\n\
+     |  :/\\:  | |  (\\/)  | |  :():  | |  :/\\:  |\n\
+     |  (__)  | |  :\\/:  | |  ()()  | |  :\\/:  |\n\
+     |  '--'" ^ Array.get combo_array 0 ^ "| |  '--'"
+  ^ Array.get combo_array 1 ^ "| |  '--'" ^ Array.get combo_array 2
+  ^ "| |  '--'" ^ Array.get combo_array 3
+  ^ "|\n`--------' `--------' `--------' `--------'"
+
+(** [play_game combo_array comb] handles the user inputs to actually
+    play the game. *)
 let rec play_game combo_array score comb =
   let line = retrieve_combo comb combo_array in
   Lwt_io.printf "Current Score: %N\n%!" score |> ignore;
@@ -75,7 +108,9 @@ let rec play_game combo_array score comb =
       ~line
       ~combo_array
       ~score =
-    Lwt_io.printf "Enter solution for: %s\n>%!" line |> ignore;
+    Lwt_io.printf "Enter solution for: %s\n>%!"
+      (line ^ nums_to_cards line)
+    |> ignore;
     Lwt_io.read_line Lwt_io.stdin >>= function
     | "quit" | "\"quit\"" -> Lwt_io.printl "Thank you for playing!"
     | "panda" ->
