@@ -1,5 +1,7 @@
 open Game.Valid_solution_checker
 open Game.Timer
+open Game.Combinations
+open Lwt
 
 (** [combo_to_list str] converts [str] into an int list.
 
@@ -29,17 +31,7 @@ let rec get_combination in_channel =
     close_in_noerr in_channel;
     Array.make 0 ""
 
-open Lwt
-(** [play_game combo_array comb] handles the user inputs to actually
-    play the game. *)
-
-let create_timer line score =
-  timer line (fun () ->
-      Lwt_io.printf
-        "\nTimes up. Thanks for playing! Final score: %N\n%!" score
-      |> ignore;
-      exit 0)
-
+(** [help_menu] is a string representing the game's help menu. *)
 let help_menu =
   "\n\
    ~24 Battle Royale: Solo Edition Help Menu~ \n\n\
@@ -55,17 +47,58 @@ let help_menu =
    -Only uses the four numbers and valid operations\n\
    -Proper opening and closing parentheses\n\n\
    Valid non-expression commands are:\n\
-   \"quit\": exits the game\n\
-   \"help\": opens up the help menu\n\n\
+   \"quit\": Exits the game\n\
+   \"skip\": Skips the current question and gives a new one for a \
+   score penalty\n\
+   \"help\": Opens up the help menu\n\n\
    Hope this helped! Good luck!\n"
 
+(** [make_two_sized str] returns a string of length two if the length of
+    [str] is two or one. *)
+let make_two_sized str =
+  if String.length str < 2 then " " ^ str else str
+
+(** [line_array line] returns an array representation of [line] if
+    [line] is a string of four integers, with length < 3, with exactly
+    one space in between each integer. *)
+let line_array line =
+  let num_list = String.split_on_char ' ' line in
+  let rec line_to_array num_list =
+    match num_list with
+    | h :: t ->
+        line_to_array t
+        |> Array.append (make_two_sized h |> Array.make 1)
+    | [] -> Array.make 0 ""
+  in
+  line_to_array num_list
+
+let nums_to_cards line =
+  let combo_array = line_array line in
+  "\n.--------. .--------. .--------. .--------.\n|"
+  ^ Array.get combo_array 0 ^ ".--.  | |" ^ Array.get combo_array 1
+  ^ ".--.  | |" ^ Array.get combo_array 2 ^ ".--.  | |"
+  ^ Array.get combo_array 3
+  ^ ".--.  |\n\
+     |  :/\\:  | |  (\\/)  | |  :():  | |  :/\\:  |\n\
+     |  (__)  | |  :\\/:  | |  ()()  | |  :\\/:  |\n\
+     |  '--'" ^ Array.get combo_array 0 ^ "| |  '--'"
+  ^ Array.get combo_array 1 ^ "| |  '--'" ^ Array.get combo_array 2
+  ^ "| |  '--'" ^ Array.get combo_array 3
+  ^ "|\n`--------' `--------' `--------' `--------'"
+
+(** [play_game combo_array comb] handles the user inputs to actually
+    play the game. *)
 let rec play_game combo_array score comb =
   let line = retrieve_combo comb combo_array in
   Lwt_io.printf "Current Score: %N\n%!" score |> ignore;
   let time_counter, repeated_timer =
     timer line (fun () ->
-        Lwt_io.printf
-          "\nTimes up. Thanks for playing! Final score: %N\n%!" score
+        Lwt_io.printl
+          ("\nTimes up! Correct answer for " ^ line ^ " is: "
+          ^ (String.split_on_char ' ' line
+            |> List.map int_of_string |> Combinations.solution_to))
+        |> ignore;
+        Lwt_io.printf "Thanks for playing!\nFinal score: %N\n%!" score
         |> ignore;
         exit 0)
   in
@@ -75,7 +108,9 @@ let rec play_game combo_array score comb =
       ~line
       ~combo_array
       ~score =
-    Lwt_io.printf "Enter solution for: %s\n>%!" line |> ignore;
+    Lwt_io.printf "Enter solution for: %s\n>%!"
+      (line ^ nums_to_cards line)
+    |> ignore;
     Lwt_io.read_line Lwt_io.stdin >>= function
     | "quit" | "\"quit\"" -> Lwt_io.printl "Thank you for playing!"
     | "panda" ->
@@ -223,10 +258,21 @@ let rec play_game combo_array score comb =
         |> ignore;
         enter_sol ~time_counter ~repeated_timer ~line ~combo_array
           ~score
-    | "help" ->
+    | "help" | "\"help\"" ->
         Lwt_io.printl help_menu |> ignore;
         enter_sol ~time_counter ~repeated_timer ~line ~combo_array
           ~score
+    | "skip" | "\"skip\"" ->
+        Lwt_io.printl
+          ("Nice Attempt! Here's the solution: "
+          ^ (String.split_on_char ' ' line
+            |> List.map int_of_string |> Combinations.solution_to))
+        |> ignore;
+        cancel time_counter;
+        cancel repeated_timer;
+        play_game combo_array
+          (if score - 1 > 0 then score - 1 else 0)
+          ""
     | ans -> begin
         match check_solution ans (combo_to_list line) with
         | Correct ->
@@ -299,10 +345,13 @@ let main () =
     "\n\n\
      Welcome to 24 Battle Royale: Solo Edition! Given four numbers, \
      use addition, subtraction, multiplication, and division to make \
-     24. Press enter to start the game or type \"quit\" to exit.\n";
+     24. Feel free to use the \"skip\" command if you get stuck on a \
+     question for a small penalty. Use the \"help\" command to view \
+     the help menu. Press enter to start the game or type \"quit\" to \
+     exit.\n";
   match read_line () with
   | "help" | "\"help\"" ->
-      print_endline help_menu;
+      ANSITerminal.print_string [ ANSITerminal.magenta ] help_menu;
       ANSITerminal.print_string [ ANSITerminal.red ]
         "Press enter to start the game. Or type \"quit\" to exit.\n";
       read_line () |> main_quit_and_enter

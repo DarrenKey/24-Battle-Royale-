@@ -19,10 +19,9 @@ module type Combinations = sig
       comb is a list of 4 positive numbers less than or equal to 12.
       Raises: Invalid_argument *)
 
-  (** Generates the solution to [lst] in Postfix. Requires: [lst] can
-      get to 24 *)
-
   val solution_to : int list -> string
+  (** Generates the solution to [lst] in infix. Requires: [lst] can get
+      to 24 *)
 end
 
 module CombinationsImpl = struct
