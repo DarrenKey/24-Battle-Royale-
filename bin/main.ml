@@ -3,20 +3,29 @@ let string_of_client client =
 
 let server = Ws.Server.create ~port:3000
 let get_client_id client = client |> Ws.Client.id |> Ws.Client.Id.to_int
+let check_game_status = ref false
 
 let on_connect client_set host_id client =
-  if Hashtbl.length client_set = 0 then
-    (host_id := get_client_id client;
-     Ws.Client.send client
-       "You're the host! Type /start to start the game.")
+  if !check_game_status then
+    Ws.Client.send client
+      "Game has already started, please wait for the current game to \
+       end."
     |> ignore
-  else
-    Ws.Client.send client "Waiting for the host to start the game..."
-    |> ignore;
-  Hashtbl.add client_set (get_client_id client) false;
+  else begin
+    if Hashtbl.length client_set = 0 then
+      (host_id := get_client_id client;
+       Ws.Client.send client
+         "You're the host! Type /start to start the game.")
+      |> ignore
+    else
+      Ws.Client.send client "Waiting for the host to start the game..."
+      |> ignore;
+    Hashtbl.add client_set (get_client_id client) false
+  end;
   Lwt.return ()
 
 let run_start_setup server client =
+  check_game_status := true;
   Ws.Server.broadcast_to_others server client "Game starting!"
 
 let handler client_set host_id client message =
