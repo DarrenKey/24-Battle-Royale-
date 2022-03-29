@@ -14,3 +14,10 @@
  (name solo_game)
  (modules solo_game)
  (libraries Game ANSITerminal lwt lwt.unix))
+
+(executable
+ (name client)
+ (modules client)
+ (libraries Game websocket dream lwt lwt.unix ANSITerminal dotenv hyper)
+ (preprocess
+  (pps lwt_ppx)))

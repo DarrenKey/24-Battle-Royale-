@@ -1,6 +1,8 @@
 INSTRUCTIONS ON HOW TO BUILD:
 
-Run the following command [in this directory]:
+Run the following commands [in this directory]:
+opam install dream
+opam install dotenv
 make solo-play
 
-ENJOY! [No extra libraries needed to be installed]
+ENJOY!

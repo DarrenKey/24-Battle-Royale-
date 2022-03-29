@@ -15,6 +15,9 @@ main:
 solo-play:
 	OCAMLRUNPARAM=b dune exec bin/solo_game.exe
 
+client:
+	OCAMLRUNPARAM=b dune exec bin/client.exe
+
 combos:
 	OCAMLRUNPARAM=b dune exec bin/combs_printer.exe
 
