@@ -117,7 +117,8 @@ let handler client_set host_id client message =
   (* Parrots message ot everyone. Kept in for now as a debug measure *)
   | other_msg ->
       broadcast_client_message
-        (string_of_client client ^ String.concat " " other_msg)
+        ("User " ^ string_of_client client ^ ": "
+        ^ String.concat " " other_msg)
         Msg
 
 let () =

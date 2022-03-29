@@ -26,6 +26,9 @@ let parse_command message =
   | "Quit" -> Quit
   | _ -> raise CommandNotReceived
 
+(** Get something from the server according to the protocol outline at
+    the top. Returns a record with the command and the associatedm
+    message.*)
 let get_msg_command (websocket : Hyper.websocket) =
   let%lwt received_command = Hyper.receive websocket in
   let received_command =
@@ -47,14 +50,13 @@ let get_msg_command (websocket : Hyper.websocket) =
 let rec websocket_loop websocket =
   let%lwt entered_line = Lwt_io.read_line Lwt_io.stdin in
   let%lwt sent_command = Hyper.send websocket entered_line in
-  let%lwt received_command = Hyper.receive websocket in
-  let%lwt received_message = Hyper.receive websocket in
-  match received_message with
-  | Some x ->
-      print_endline x;
-      websocket_loop websocket
-  | None ->
-      Lwt.return ();
+  let%lwt client_msg = get_msg_command websocket in
+  match client_msg.command with
+  | Quit ->
+      print_endline client_msg.msg;
+      Hyper.close_websocket websocket
+  | Msg ->
+      print_endline client_msg.msg;
       websocket_loop websocket
 
 let on_connect_websocket websocket =
