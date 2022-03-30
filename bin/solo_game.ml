@@ -86,13 +86,15 @@ let nums_to_cards line =
   ^ "| |  '--'" ^ Array.get combo_array 3
   ^ "|\n`--------' `--------' `--------' `--------'"
 
+let notify_time = ref false
+
 (** [play_game combo_array comb] handles the user inputs to actually
     play the game. *)
 let rec play_game combo_array score comb =
   let line = retrieve_combo comb combo_array in
   Lwt_io.printf "Current Score: %N\n%!" score |> ignore;
   let time_counter, repeated_timer =
-    timer line (fun () ->
+    timer notify_time line (fun () ->
         Lwt_io.printl
           ("\nTimes up! Correct answer for " ^ line ^ " is: "
           ^ (String.split_on_char ' ' line
@@ -112,6 +114,13 @@ let rec play_game combo_array score comb =
       (line ^ nums_to_cards line)
     |> ignore;
     Lwt_io.read_line Lwt_io.stdin >>= function
+    | "time" | "\"time\"" ->
+        Lwt_io.printl "" |> ignore;
+        let time_left = !Game.Timer.time_limit |> string_of_int in
+        time_left ^ " seconds left!" |> Lwt_io.printl |> ignore;
+        Lwt_io.printl "" |> ignore;
+        enter_sol ~time_counter ~repeated_timer ~line ~combo_array
+          ~score
     | "quit" | "\"quit\"" -> Lwt_io.printl "Thank you for playing!"
     | "panda" ->
         Lwt_io.printl
@@ -270,6 +279,7 @@ let rec play_game combo_array score comb =
         |> ignore;
         cancel time_counter;
         cancel repeated_timer;
+        time_limit := 40;
         play_game combo_array
           (if score - 1 > 0 then score - 1 else 0)
           ""
@@ -279,6 +289,7 @@ let rec play_game combo_array score comb =
             Lwt_io.printl "\nNice Job! Here's another one\n" |> ignore;
             cancel time_counter;
             cancel repeated_timer;
+            time_limit := 40;
             play_game combo_array (score + 1) ""
         | Incorrect ->
             Lwt_io.printl "\nIncorrect, but nice attempt! Try again!\n"
