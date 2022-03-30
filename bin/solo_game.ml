@@ -50,6 +50,8 @@ let help_menu =
    \"quit\": Exits the game\n\
    \"skip\": Skips the current question and gives a new one for a \
    score penalty\n\
+   \"time\": Displays the time left for the current problem\n\
+   \"repeat\": Repeats the current problem\n\
    \"help\": Opens up the help menu\n\n\
    Hope this helped! Good luck!\n"
 
@@ -72,6 +74,11 @@ let line_array line =
   in
   line_to_array num_list
 
+(** [nums_to_cards line] is a card visualization of the four numbers in
+    line.
+
+    Requires: line is a string with four integers 1 to 13 with one space
+    in between each number. *)
 let nums_to_cards line =
   let combo_array = line_array line in
   "\n.--------. .--------. .--------. .--------.\n|"
@@ -85,6 +92,12 @@ let nums_to_cards line =
   ^ Array.get combo_array 1 ^ "| |  '--'" ^ Array.get combo_array 2
   ^ "| |  '--'" ^ Array.get combo_array 3
   ^ "|\n`--------' `--------' `--------' `--------'"
+
+(** [timer_reset] resets the timer for a problem. *)
+let timer_reset time_counter repeated_timer =
+  cancel time_counter;
+  cancel repeated_timer;
+  time_limit := 40
 
 (** [play_game combo_array comb] handles the user inputs to actually
     play the game. *)
@@ -112,6 +125,17 @@ let rec play_game combo_array score comb =
       (line ^ nums_to_cards line)
     |> ignore;
     Lwt_io.read_line Lwt_io.stdin >>= function
+    | "time" | "\"time\"" ->
+        Lwt_io.printl "" |> ignore;
+        let time_left = !Game.Timer.time_limit |> string_of_int in
+        time_left ^ " seconds left!" |> Lwt_io.printl |> ignore;
+        Lwt_io.printl "" |> ignore;
+        enter_sol ~time_counter ~repeated_timer ~line ~combo_array
+          ~score
+    | "repeat" | "\"repeat\"" ->
+        Lwt_io.printl "" |> ignore;
+        enter_sol ~time_counter ~repeated_timer ~line ~combo_array
+          ~score
     | "quit" | "\"quit\"" -> Lwt_io.printl "Thank you for playing!"
     | "panda" ->
         Lwt_io.printl
@@ -263,13 +287,14 @@ let rec play_game combo_array score comb =
         enter_sol ~time_counter ~repeated_timer ~line ~combo_array
           ~score
     | "skip" | "\"skip\"" ->
+        Lwt_io.printl "" |> ignore;
         Lwt_io.printl
           ("Nice Attempt! Here's the solution: "
           ^ (String.split_on_char ' ' line
             |> List.map int_of_string |> Combinations.solution_to))
         |> ignore;
-        cancel time_counter;
-        cancel repeated_timer;
+        Lwt_io.printl "" |> ignore;
+        timer_reset time_counter repeated_timer;
         play_game combo_array
           (if score - 1 > 0 then score - 1 else 0)
           ""
@@ -277,8 +302,7 @@ let rec play_game combo_array score comb =
         match check_solution ans (combo_to_list line) with
         | Correct ->
             Lwt_io.printl "\nNice Job! Here's another one\n" |> ignore;
-            cancel time_counter;
-            cancel repeated_timer;
+            timer_reset time_counter repeated_timer;
             play_game combo_array (score + 1) ""
         | Incorrect ->
             Lwt_io.printl "\nIncorrect, but nice attempt! Try again!\n"
