@@ -51,6 +51,7 @@ let help_menu =
    \"skip\": Skips the current question and gives a new one for a \
    score penalty\n\
    \"time\": Displays the time left for the current problem\n\
+   \"repeat\": Repeats the current problem\n\
    \"help\": Opens up the help menu\n\n\
    Hope this helped! Good luck!\n"
 
@@ -128,6 +129,10 @@ let rec play_game combo_array score comb =
         Lwt_io.printl "" |> ignore;
         let time_left = !Game.Timer.time_limit |> string_of_int in
         time_left ^ " seconds left!" |> Lwt_io.printl |> ignore;
+        Lwt_io.printl "" |> ignore;
+        enter_sol ~time_counter ~repeated_timer ~line ~combo_array
+          ~score
+    | "repeat" | "\"repeat\"" ->
         Lwt_io.printl "" |> ignore;
         enter_sol ~time_counter ~repeated_timer ~line ~combo_array
           ~score
