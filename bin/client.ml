@@ -55,51 +55,48 @@ let rec websocket_loop websocket =
   let%lwt client_msg = get_msg_command websocket in
   match client_msg.command with
   | Quit ->
-      print_endline client_msg.msg;
+      printl client_msg.msg |> ignore;
       Hyper.close_websocket websocket
   | Msg ->
-      print_endline client_msg.msg;
+      printl client_msg.msg |> ignore;
       websocket_loop websocket
-
-let on_connect_websocket websocket =
-  let%lwt send_initial_connect = Hyper.send websocket "on_connect" in
-  let%lwt client_msg = get_msg_command websocket in
-  match client_msg.command with
-  | Quit ->
-      print_endline client_msg.msg;
-      Hyper.close_websocket websocket
-  | Msg ->
-      print_endline client_msg.msg;
-      websocket_loop websocket
-
 
 let rec send_websocket_loop websocket =
   let%lwt entered_line = Lwt_io.read_line Lwt_io.stdin in
   let%lwt sent_command = Hyper.send websocket entered_line in 
   send_websocket_loop websocket     
+
+
+let on_connect_websocket websocket =
+  let%lwt send_initial_connect = Hyper.send websocket "on_connect" in
+  send_websocket_loop websocket
+  
 let rec msg_listener websocket =
-  print_endline "found";
   let%lwt client_msg = get_msg_command websocket in
 
   match client_msg.command with
   | Quit ->
-      print_endline client_msg.msg;
+      printl client_msg.msg |> ignore;
       msg_listener websocket
   | Msg ->
-      print_endline client_msg.msg;
+      printl client_msg.msg |> ignore;
       msg_listener websocket
 
 let rec check_message_interval interval websocket =
   let full_interval = Lwt_unix.sleep interval in 
   let half_interval = Lwt_unix.sleep (interval /. 2.) in 
-  (let msg = Lwt.bind (get_msg_command websocket) (fun actual_msg -> print_endline actual_msg.msg; Lwt.return ()) 
-  in (Lwt.bind (half_interval) (fun _ -> Lwt.cancel msg; Lwt.return ())); (Lwt.bind (full_interval) (fun _ -> check_message_interval interval websocket)))
+  (let msg = Lwt.bind (get_msg_command websocket) (fun actual_msg -> 
+    match actual_msg.command with
+    | Msg -> printl actual_msg.msg
+    | Quit -> 
+      printl actual_msg.msg |> ignore; Hyper.close_websocket websocket |> ignore; exit 0) 
+  in (Lwt.bind (half_interval) (fun _ -> Lwt.cancel msg; Lwt.return ())) |> ignore; (Lwt.bind (full_interval) (fun _ -> check_message_interval interval websocket)))
 
 
 let () =
   let websocket = Hyper.websocket "ws://localhost:3000" in
   Lwt_main.run
     (let%lwt websocket = websocket in
-    let checking_message = check_message_interval 0.1 websocket in 
-    send_websocket_loop websocket);
+    let _ = check_message_interval 0.1 websocket in 
+    on_connect_websocket websocket) |> ignore;
   ()

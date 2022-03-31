@@ -97,18 +97,22 @@ let handler client_set host_id client message =
         get_client_id client = !host_id
         && Hashtbl.length client_set >= 1
       then begin
+        let%lwt _ = send_client_message "Quit successfully" Quit in
         Ws.Server.close server client |> ignore;
         let new_host = next_host client_set !host_id in
         host_id := get_client_id new_host;
-        send_client_message "You are now the new host!" Msg
+        send_message_to_client new_host "You are now the new host!" Msg
       end
       else if
         get_client_id client = !host_id && Hashtbl.length client_set = 0
       then begin
         check_game_status := false;
+        let%lwt _ = send_client_message "Quit successfully" Quit in
         Ws.Server.close server client
       end
-      else Ws.Server.close server client
+      else
+        let%lwt _ = send_client_message "Quit successfully" Quit in
+        Ws.Server.close server client
   | [ a; b; c; d; e ] when a = "evaluate" ->
       send_client_message
         (Game.Combinations.Combinations.solution_to
