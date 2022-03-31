@@ -18,6 +18,6 @@
 (executable
  (name client)
  (modules client)
- (libraries Game websocket dream lwt lwt.unix ANSITerminal dotenv hyper)
+ (libraries Game websocket dream lwt lwt.unix ANSITerminal hyper)
  (preprocess
   (pps lwt_ppx)))
