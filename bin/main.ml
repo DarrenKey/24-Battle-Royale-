@@ -43,10 +43,6 @@ let on_connect client_set host_id client send_client_message =
   end;
   Lwt.return ()
 
-let run_start_setup server client broadcast_message =
-  check_game_status := true;
-  broadcast_message "Game starting!" Msg
-
 let rec next_host client_set host_id : Ws.Client.t =
   let pos_host_id = host_id + 1 in
   match Hashtbl.find_opt client_set pos_host_id with
@@ -78,6 +74,52 @@ let send_message_to_client client message (command : client_command) =
   let%lwt message_sent = Ws.Client.send client message in
   Lwt.return ()
 
+let rec run_start_setup server client_set client broadcast_message =
+  check_game_status := true;
+  ignore (broadcast_message "Game starting!" Msg);
+  let client_id = get_client_id client in
+  let send_client_message = send_message_to_client client in
+  let rec play_game combo_array score comb =
+    let open Game.Play in
+    let open Game.Timer in
+    let open Game.Combinations in
+    let line = retrieve_combo comb combo_array in
+    send_client_message ("Current Score: " ^ string_of_int score) Msg
+    |> ignore;
+    let time_counter, repeated_timer =
+      timer line (fun () ->
+          Hashtbl.remove client_set client_id;
+          send_client_message
+            ("\nTimes up! Correct answer for " ^ line ^ " is: "
+            ^ (String.split_on_char ' ' line
+              |> List.map int_of_string |> Combinations.solution_to))
+            Msg
+          |> ignore;
+          send_client_message
+            ("Thanks for playing!\nFinal score: " ^ string_of_int score)
+            Quit
+          |> ignore;
+          Ws.Server.close server client |> ignore)
+    in
+    let rec enter_sol
+        ~time_counter
+        ~repeated_timer
+        ~line
+        ~combo_array
+        ~score =
+      send_client_message
+        ("Enter solution for: " ^ line ^ nums_to_cards line)
+        Msg
+      |> ignore
+    in
+
+    enter_sol ~time_counter ~repeated_timer ~line ~combo_array ~score
+  in
+  let in_channel =
+    open_in ("assets" ^ Filename.dir_sep ^ "combos.txt")
+  in
+  Lwt.return (play_game (Game.Play.get_combination in_channel) 0 "")
+
 let handler client_set host_id client message =
   let client_id = get_client_id client in
   let send_client_message = send_message_to_client client in
@@ -89,7 +131,8 @@ let handler client_set host_id client message =
       on_connect client_set host_id client send_client_message
   | [ "/start" ] ->
       if !host_id = client_id then
-        run_start_setup server client broadcast_client_message
+        run_start_setup server client_set client
+          broadcast_client_message
       else send_client_message "You are not the host!" Msg
   | [ "/quit" ] ->
       Hashtbl.remove client_set client_id;
