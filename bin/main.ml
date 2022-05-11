@@ -109,7 +109,9 @@ let broadcast_message_to_lobby
     message
     (command : client_command) =
   let lobby, _ = get_lobby lobbies lobby_id in
-  List.map (fun c -> send_message_to_client c message command) lobby
+  List.fold_left
+    (fun acc c -> send_message_to_client c message command |> ignore)
+    () lobby
   |> ignore;
   Lwt.return ()
 
@@ -159,6 +161,9 @@ let rec game_loop lobby_id lobbies client_set client_states () =
         else c :: loop tail
   in
   let clients, starting_time = get_lobby lobbies lobby_id in
+  (* if List.length clients = 1 then ( send_message_to_client (List.hd
+     clients) "You're the last one standing!" Msg |> ignore; Thread.exit
+     ()) else *)
   Hashtbl.replace lobbies lobby_id (loop clients, starting_time);
   Thread.delay 0.2;
   game_loop lobby_id lobbies client_set client_states ();
@@ -252,21 +257,16 @@ and run_lobby
         ignore (broadcast_message server "Game starting!" Msg);
         Hashtbl.replace lobbies lobby_id
           (lobby, int_of_float @@ Unix.time ());
-        let in_channel =
-          open_in ("assets" ^ Filename.dir_sep ^ "combos.txt")
-        in
-        (* initialize every client in the current lobby *)
-        List.map
-          (fun c ->
-            match Hashtbl.find_opt client_states (get_client_id c) with
-            | Some (ln, _, _, _, _) ->
-                Hashtbl.replace client_states client_id
-                  (ln, Game.Play.get_combination in_channel, 0, "", 40)
-            | None ->
-                print_endline "Client not found: run_lobby";
-                failwith "")
-          lobby
-        |> ignore;
+        (let in_channel =
+           open_in ("assets" ^ Filename.dir_sep ^ "combos.txt")
+         in
+         let combos = Game.Play.get_combination in_channel in
+         (* initialize every client in the current lobby *)
+         List.fold_left
+           (fun acc c ->
+             Hashtbl.replace client_states (get_client_id c)
+               (lobby_id, combos, 0, "", 40))
+           () lobby);
         Thread.create
           (game_loop lobby_id lobbies client_set client_states)
           ()
