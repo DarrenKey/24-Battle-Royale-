@@ -137,12 +137,13 @@ let get_client_state client_states client_id =
 
 (* This function should somehow be run asynchronously, at every tick,
    after the game starts *)
-let game_loop lobby_id lobbies client_set client_states =
+let rec game_loop lobby_id lobbies client_set client_states () =
   let rec loop clients =
     match clients with
     | [] -> []
     | c :: tail ->
         let client_id = get_client_id c in
+        let send_client_message = send_message_to_client c in
         let starting_time =
           get_starting_time client_states client_id lobbies
         in
@@ -152,52 +153,37 @@ let game_loop lobby_id lobbies client_set client_states =
         if Game.Timer.game_over starting_time total_time then (
           Hashtbl.remove client_set client_id;
           Hashtbl.remove client_states client_id;
+          send_client_message "Thanks for playing!" Quit |> ignore;
+          Ws.Server.close server c |> ignore;
           loop tail)
         else c :: loop tail
   in
   let clients, starting_time = get_lobby lobbies lobby_id in
   Hashtbl.replace lobbies lobby_id (loop clients, starting_time);
-  Lwt.return ()
+  Thread.delay 0.2;
+  game_loop lobby_id lobbies client_set client_states ();
+  ()
 
 (* TODO: make this function to handle user input only instead *)
 let rec run_game client_set client_states lobbies client message =
-  let client_id = get_client_id client in
-  let send_client_message = send_message_to_client client in
-  let starting_time =
-    get_starting_time client_states client_id lobbies
-  in
-  let combo_array, score, comb, total_time =
-    match Hashtbl.find_opt client_states client_id with
-    | Some (_, ca, s, c, t) -> (ca, s, c, t)
-    | None ->
-        print_endline "Client not found: run_game";
-        failwith ""
-  in
-  let open Game.Play in
-  let open Game.Timer in
-  let open Game.Combinations in
-  let open Game.Valid_solution_checker in
-  let line = retrieve_combo comb combo_array in
-  send_client_message ("Current Score: " ^ string_of_int score) Msg
-  |> ignore;
-  if Game.Timer.game_over starting_time total_time then begin
-    Hashtbl.remove client_set client_id;
-    send_client_message
-      ("\nTimes up! Correct answer for " ^ line ^ " is: "
-      ^ (String.split_on_char ' ' line
-        |> List.map int_of_string |> Combinations.solution_to))
-      Msg
-    |> ignore;
-    send_client_message
-      ("Thanks for playing!\nFinal score: " ^ string_of_int score)
-      Quit
-    |> ignore;
-    Ws.Server.close server client
-  end
-  else
-    send_client_message
-      ("Enter solution for: " ^ line ^ nums_to_cards line)
-      Msg
+  Lwt.return ()
+(* let client_id = get_client_id client in let send_client_message =
+   send_message_to_client client in let starting_time =
+   get_starting_time client_states client_id lobbies in let combo_array,
+   score, comb, total_time = match Hashtbl.find_opt client_states
+   client_id with | Some (_, ca, s, c, t) -> (ca, s, c, t) | None ->
+   print_endline "Client not found: run_game"; failwith "" in let open
+   Game.Play in let open Game.Timer in let open Game.Combinations in let
+   open Game.Valid_solution_checker in let line = retrieve_combo comb
+   combo_array in send_client_message ("Current Score: " ^ string_of_int
+   score) Msg |> ignore; if Game.Timer.game_over starting_time
+   total_time then begin Hashtbl.remove client_set client_id;
+   send_client_message ("\nTimes up! Correct answer for " ^ line ^ "
+   is:\n " ^ (String.split_on_char ' ' line |> List.map int_of_string |>
+   Combinations.solution_to)) Msg |> ignore; send_client_message
+   ("Thanks for playing!\nFinal score: " ^ string_of_int score) Quit |>
+   ignore; Ws.Server.close server client end else send_client_message
+   ("Enter solution for: " ^ line ^ nums_to_cards line) Msg *)
 
 (* In this context [message] refers to the message sent by client *)
 let rec handler client_set host_id client_states lobbies client message
@@ -281,8 +267,9 @@ and run_lobby
                 failwith "")
           lobby
         |> ignore;
-        Lwt.return @@ Lwt_main.run
-        @@ game_loop lobby_id lobbies client_set client_states
+        Thread.create
+          (game_loop lobby_id lobbies client_set client_states)
+          ()
         |> ignore;
         run_game client_set client_states lobbies client message)
       else send_client_message "You are not the host!" Msg
