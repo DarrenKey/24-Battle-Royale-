@@ -50,15 +50,16 @@ let on_connect
   let assigned_lobby = 0 in
   let client_id = get_client_id client in
   Hashtbl.add client_states client_id
-    (assigned_lobby, [||], -1, "__INIT");
+    (assigned_lobby, [||], -1, "__INIT_COMBO", -1.);
   print_endline
     ("added client " ^ string_of_int client_id ^ " to client_states");
-  let lobby =
+  let clients_in_lobby, start_time =
     match Hashtbl.find_opt lobbies assigned_lobby with
-    | Some l -> l
-    | None -> []
+    | Some (l, t) -> (l, t)
+    | None -> ([], -1.)
   in
-  Hashtbl.replace lobbies assigned_lobby (client :: lobby);
+  Hashtbl.replace lobbies assigned_lobby
+    (client :: clients_in_lobby, start_time);
   Lwt.return ()
 
 let rec next_host client_set host_id : Ws.Client.t =
@@ -97,7 +98,7 @@ let rec run_start_setup server client_set client broadcast_message =
 
 let get_lobby lobbies lobby_id =
   match Hashtbl.find_opt lobbies lobby_id with
-  | Some clients -> clients
+  | Some (clients, t) -> (clients, t)
   | None ->
       print_endline "Lobby not found: broadcast_message_to_lobby";
       failwith ""
@@ -107,7 +108,7 @@ let broadcast_message_to_lobby
     lobby_id
     message
     (command : client_command) =
-  let lobby = get_lobby lobbies lobby_id in
+  let lobby, _ = get_lobby lobbies lobby_id in
   List.map (fun c -> send_message_to_client c message command) lobby
   |> ignore;
   Lwt.return ()
@@ -125,7 +126,7 @@ let rec handler client_set host_id client_states lobbies client message
   let client_id = get_client_id client in
   let client_lobby_id =
     match Hashtbl.find_opt client_states client_id with
-    | Some (n, _, _, _) -> n
+    | Some (n, _, _, _, _) -> n
     | None ->
         print_endline "Client not found: handler";
         failwith ""
@@ -145,7 +146,7 @@ and run_lobby
     client
     message =
   let client_id = get_client_id client in
-  let lobby = get_lobby lobbies lobby_id in
+  let lobby, _ = get_lobby lobbies lobby_id in
   let send_client_message = send_message_to_client client in
   let broadcast_client_message =
     broadcast_message_to_lobby lobbies lobby_id
@@ -164,9 +165,9 @@ and run_lobby
         List.map
           (fun c ->
             match Hashtbl.find_opt client_states client_id with
-            | Some (ln, _, _, _) ->
+            | Some (ln, _, _, _, _) ->
                 Hashtbl.replace client_states client_id
-                  (ln, Game.Play.get_combination in_channel, 0, "")
+                  (ln, Game.Play.get_combination in_channel, 0, "", 40.)
             | None ->
                 print_endline "Client not found: run_lobby";
                 failwith "")
@@ -211,9 +212,9 @@ and run_lobby
 and run_game client_set client_states client message =
   let client_id = get_client_id client in
   let send_client_message = send_message_to_client client in
-  let combo_array, score, comb =
+  let combo_array, score, comb, total_time =
     match Hashtbl.find_opt client_states client_id with
-    | Some (_, ca, s, c) -> (ca, s, c)
+    | Some (_, ca, s, c, t) -> (ca, s, c, t)
     | None ->
         print_endline "Client not found: run_game";
         failwith ""
@@ -240,64 +241,21 @@ and run_game client_set client_states client message =
         |> ignore;
         Ws.Server.close server client |> ignore)
   in
-  let rec enter_sol
-      ~time_counter
-      ~repeated_timer
-      ~line
-      ~combo_array
-      ~score =
-    send_client_message
-      ("Enter solution for: " ^ line ^ nums_to_cards line)
-      Msg
-    |> ignore;
-    match message with
-    | "time" | "\"time\"" ->
-        send_client_message "\n" Msg |> ignore;
-        let time_left = !Game.Timer.time_limit |> string_of_int in
-        send_client_message (time_left ^ " seconds left!") Msg |> ignore;
-        enter_sol ~time_counter ~repeated_timer ~line ~combo_array
-          ~score
-    | "repeat" | "\"repeat\"" ->
-        send_client_message "\n" |> ignore;
-        enter_sol ~time_counter ~repeated_timer ~line ~combo_array
-          ~score
-    | "quit" | "\"quit\"" ->
-        send_client_message "Thank you for playing!" Quit
-    | ans -> begin
-        match check_solution ans (combo_to_list line) with
-        | Correct ->
-            send_client_message "\nNice Job! Here's another one\n" Msg
-            |> ignore;
-            timer_reset time_counter repeated_timer;
-
-            run_game combo_array (score + 1) ""
-        | Incorrect ->
-            send_client_message
-              "\nIncorrect, but nice attempt! Try again!\n" Msg
-            |> ignore;
-            enter_sol ~time_counter ~repeated_timer ~line ~combo_array
-              ~score
-        | Invalid ->
-            send_client_message
-              "\nInvalid input, but nice attempt! Try again!\n" Msg
-            |> ignore;
-            enter_sol ~time_counter ~repeated_timer ~line ~combo_array
-              ~score
-      end
-  in
-
-  Lwt.return
-    (enter_sol ~time_counter ~repeated_timer ~line ~combo_array ~score)
+  failwith ""
 
 let () =
   let client_set : (int, Ws.Client.t) Hashtbl.t = Hashtbl.create 50 in
-  (* maps client ids to (lobby_id, combo_array, score, comb) *)
-  let client_states : (int, int * string array * int * string) Hashtbl.t
-      =
+  (* maps client ids to (lobby_id, combo_array, score, comb,
+     total_game_time) *)
+  let client_states :
+      (int, int * string array * int * string * float) Hashtbl.t =
     Hashtbl.create 50
   in
   (* TODO: make each lobby have a different host! *)
-  let lobbies : (int, Ws.Client.t list) Hashtbl.t = Hashtbl.create 50 in
+  (* the float represents the time at which the lobby started*)
+  let lobbies : (int, Ws.Client.t list * float) Hashtbl.t =
+    Hashtbl.create 50
+  in
   let host_id = ref 0 in
   let helper_connect temp = Lwt.return () in
   Lwt_main.run
