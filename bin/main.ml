@@ -45,21 +45,21 @@ let on_connect
       send_client_message "Waiting for the host to start the game..."
         Msg
       |> ignore;
-    Hashtbl.add client_set (get_client_id client) client
+    Hashtbl.add client_set (get_client_id client) client;
+    let assigned_lobby = 0 in
+    let client_id = get_client_id client in
+    Hashtbl.add client_states client_id
+      (assigned_lobby, [||], -1, "__INIT_COMBO", -1);
+    print_endline
+      ("added client " ^ string_of_int client_id ^ " to client_states");
+    let clients_in_lobby, start_time =
+      match Hashtbl.find_opt lobbies assigned_lobby with
+      | Some (l, t) -> (l, t)
+      | None -> ([], -1)
+    in
+    Hashtbl.replace lobbies assigned_lobby
+      (client :: clients_in_lobby, start_time)
   end;
-  let assigned_lobby = 0 in
-  let client_id = get_client_id client in
-  Hashtbl.add client_states client_id
-    (assigned_lobby, [||], -1, "__INIT_COMBO", -1);
-  print_endline
-    ("added client " ^ string_of_int client_id ^ " to client_states");
-  let clients_in_lobby, start_time =
-    match Hashtbl.find_opt lobbies assigned_lobby with
-    | Some (l, t) -> (l, t)
-    | None -> ([], -1)
-  in
-  Hashtbl.replace lobbies assigned_lobby
-    (client :: clients_in_lobby, start_time);
   Lwt.return ()
 
 let rec next_host client_set host_id : Ws.Client.t =
@@ -117,7 +117,7 @@ let get_client_lobby_id client_states client_id =
   match Hashtbl.find_opt client_states client_id with
   | Some (n, _, _, _, _) -> n
   | None ->
-      print_endline "Client not found: client_lobby_id";
+      print_endline "Client not found: get_client_lobby_id";
       failwith ""
 
 let get_starting_time client_states client_id lobbies =
@@ -128,99 +128,39 @@ let get_starting_time client_states client_id lobbies =
       print_endline "Lobby not found: get_starting_time";
       failwith ""
 
-(* In this context [message] refers to the message sent by client *)
-let rec handler client_set host_id client_states lobbies client message
-    =
-  (let send_client_message = send_message_to_client client in
-   match String.split_on_char ' ' message with
-   | [ "on_connect" ] ->
-       on_connect client_set host_id client_states lobbies client
-         send_client_message
-   | _ -> Lwt.return ())
-  |> ignore;
-  let client_id = get_client_id client in
-  let client_lobby_id = get_client_lobby_id client_states client_id in
-  if !check_game_status then
-    run_game client_set client_states lobbies client message
-  else
-    run_lobby client_lobby_id client_set host_id client_states lobbies
-      client message
+let get_client_state client_states client_id =
+  match Hashtbl.find_opt client_states client_id with
+  | Some (a, b, c, d, e) -> (a, b, c, d, e)
+  | None ->
+      print_endline "Client not found: get_client_state";
+      failwith ""
 
-and run_lobby
-    lobby_id
-    client_set
-    host_id
-    client_states
-    lobbies
-    client
-    message =
-  let client_id = get_client_id client in
-  let lobby, _ = get_lobby lobbies lobby_id in
-  let send_client_message = send_message_to_client client in
-  let broadcast_client_message =
-    broadcast_message_to_lobby lobbies lobby_id
-  in
-  match String.split_on_char ' ' message with
-  | [ "on_connect" ] -> Lwt.return ()
-  | [ "debug_host" ] ->
-      send_client_message (!host_id |> string_of_int) Msg
-  | [ "/start" ] ->
-      if !host_id = client_id then (
-        check_game_status := true;
-        ignore (broadcast_message server "Game starting!" Msg);
-        Hashtbl.replace lobbies lobby_id
-          (lobby, int_of_float (Unix.time ()));
-        let in_channel =
-          open_in ("assets" ^ Filename.dir_sep ^ "combos.txt")
+(* This function should somehow be run asynchronously, at every tick,
+   after the game starts *)
+let game_loop lobby_id lobbies client_set client_states =
+  let rec loop clients =
+    match clients with
+    | [] -> []
+    | c :: tail ->
+        let client_id = get_client_id c in
+        let starting_time =
+          get_starting_time client_states client_id lobbies
         in
-        List.map
-          (fun c ->
-            match Hashtbl.find_opt client_states client_id with
-            | Some (ln, _, _, _, _) ->
-                Hashtbl.replace client_states client_id
-                  (ln, Game.Play.get_combination in_channel, 0, "", 40)
-            | None ->
-                print_endline "Client not found: run_lobby";
-                failwith "")
-          lobby
-        |> ignore;
-        run_game client_set client_states lobbies client message)
-      else send_client_message "You are not the host!" Msg
-  | [ "/quit" ] ->
-      Hashtbl.remove client_set client_id;
-      if
-        get_client_id client = !host_id
-        && Hashtbl.length client_set >= 1
-      then begin
-        let%lwt _ = send_client_message "Quit successfully" Quit in
-        Ws.Server.close server client |> ignore;
-        let new_host = next_host client_set !host_id in
-        host_id := get_client_id new_host;
-        send_message_to_client new_host "You are now the new host!" Msg
-      end
-      else if
-        get_client_id client = !host_id && Hashtbl.length client_set = 0
-      then begin
-        check_game_status := false;
-        let%lwt _ = send_client_message "Quit successfully" Quit in
-        Ws.Server.close server client
-      end
-      else
-        let%lwt _ = send_client_message "Quit successfully" Quit in
-        Ws.Server.close server client
-  | [ a; b; c; d; e ] when a = "evaluate" ->
-      send_client_message
-        (Game.Combinations.Combinations.solution_to
-           (List.map int_of_string [ b; c; d; e ]))
-        Msg
-  (* Parrots message ot everyone. Kept in for now as a debug measure *)
-  | other_msg ->
-      broadcast_client_message
-        ("User " ^ string_of_client client ^ ": "
-        ^ String.concat " " other_msg)
-        Msg
+        let _, _, _, _, total_time =
+          get_client_state client_states client_id
+        in
+        if Game.Timer.game_over starting_time total_time then (
+          Hashtbl.remove client_set client_id;
+          Hashtbl.remove client_states client_id;
+          loop tail)
+        else c :: loop tail
+  in
+  let clients, starting_time = get_lobby lobbies lobby_id in
+  Hashtbl.replace lobbies lobby_id (loop clients, starting_time);
+  Lwt.return ()
 
-and run_game client_set client_states lobbies client message =
+(* TODO: make this function to handle user input only instead *)
+let rec run_game client_set client_states lobbies client message =
   let client_id = get_client_id client in
   let send_client_message = send_message_to_client client in
   let starting_time =
@@ -258,6 +198,127 @@ and run_game client_set client_states lobbies client message =
     send_client_message
       ("Enter solution for: " ^ line ^ nums_to_cards line)
       Msg
+
+(* In this context [message] refers to the message sent by client *)
+let rec handler client_set host_id client_states lobbies client message
+    =
+  (let send_client_message = send_message_to_client client in
+   match String.split_on_char ' ' message with
+   | [ "on_connect" ] ->
+       on_connect client_set host_id client_states lobbies client
+         send_client_message
+   | [ "debug" ] ->
+       let client_id = get_client_id client in
+       let lobby_id, combo_array, score, comb, total_game_time =
+         get_client_state client_states client_id
+       in
+       let lobby, starting_time = get_lobby lobbies lobby_id in
+       print_endline ("lobby_id: " ^ string_of_int lobby_id);
+       print_endline
+         ("lobby clients: "
+         ^ List.fold_left
+             (fun acc x -> acc ^ string_of_int (get_client_id x) ^ ", ")
+             "" lobby);
+       print_endline ("starting_time: " ^ string_of_int starting_time);
+       print_endline ("client_id: " ^ string_of_int client_id);
+       print_endline
+         ("combo_array: "
+         ^ Array.fold_left (fun acc x -> acc ^ x ^ ", ") "" combo_array
+         );
+       print_endline ("score: " ^ string_of_int score);
+       print_endline ("comb: " ^ comb);
+       print_endline
+         ("total_game_time: " ^ string_of_int total_game_time);
+       print_endline "";
+       Lwt.return ()
+   | _ -> Lwt.return ())
+  |> ignore;
+  let client_id = get_client_id client in
+  let client_lobby_id = get_client_lobby_id client_states client_id in
+  if !check_game_status then
+    run_game client_set client_states lobbies client message
+  else
+    run_lobby client_lobby_id client_set host_id client_states lobbies
+      client message
+
+and run_lobby
+    lobby_id
+    client_set
+    host_id
+    client_states
+    lobbies
+    client
+    message =
+  let client_id = get_client_id client in
+  let lobby, _ = get_lobby lobbies lobby_id in
+  let send_client_message = send_message_to_client client in
+  let broadcast_client_message =
+    broadcast_message_to_lobby lobbies lobby_id
+  in
+  match String.split_on_char ' ' message with
+  | [ "debug" ] -> Lwt.return ()
+  | [ "on_connect" ] -> Lwt.return ()
+  | [ "debug_host" ] ->
+      send_client_message (!host_id |> string_of_int) Msg
+  | [ "/start" ] ->
+      if !host_id = client_id then (
+        check_game_status := true;
+        ignore (broadcast_message server "Game starting!" Msg);
+        Hashtbl.replace lobbies lobby_id
+          (lobby, int_of_float @@ Unix.time ());
+        let in_channel =
+          open_in ("assets" ^ Filename.dir_sep ^ "combos.txt")
+        in
+        (* initialize every client in the current lobby *)
+        List.map
+          (fun c ->
+            match Hashtbl.find_opt client_states (get_client_id c) with
+            | Some (ln, _, _, _, _) ->
+                Hashtbl.replace client_states client_id
+                  (ln, Game.Play.get_combination in_channel, 0, "", 40)
+            | None ->
+                print_endline "Client not found: run_lobby";
+                failwith "")
+          lobby
+        |> ignore;
+        Lwt.return @@ Lwt_main.run
+        @@ game_loop lobby_id lobbies client_set client_states
+        |> ignore;
+        run_game client_set client_states lobbies client message)
+      else send_client_message "You are not the host!" Msg
+  | [ "/quit" ] ->
+      Hashtbl.remove client_set client_id;
+      if
+        get_client_id client = !host_id
+        && Hashtbl.length client_set >= 1
+      then begin
+        let%lwt _ = send_client_message "Quit successfully" Quit in
+        Ws.Server.close server client |> ignore;
+        let new_host = next_host client_set !host_id in
+        host_id := get_client_id new_host;
+        send_message_to_client new_host "You are now the new host!" Msg
+      end
+      else if
+        get_client_id client = !host_id && Hashtbl.length client_set = 0
+      then begin
+        check_game_status := false;
+        let%lwt _ = send_client_message "Quit successfully" Quit in
+        Ws.Server.close server client
+      end
+      else
+        let%lwt _ = send_client_message "Quit successfully" Quit in
+        Ws.Server.close server client
+  | [ a; b; c; d; e ] when a = "evaluate" ->
+      send_client_message
+        (Game.Combinations.Combinations.solution_to
+           (List.map int_of_string [ b; c; d; e ]))
+        Msg
+  (* Parrots message ot everyone. Kept in for now as a debug measure *)
+  | other_msg ->
+      broadcast_client_message
+        ("User " ^ string_of_client client ^ ": "
+        ^ String.concat " " other_msg)
+        Msg
 
 let () =
   let client_set : (int, Ws.Client.t) Hashtbl.t = Hashtbl.create 50 in
