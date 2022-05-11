@@ -140,8 +140,9 @@ let get_client_state client_states client_id =
 (* This function should somehow be run asynchronously, at every tick,
    after the game starts *)
 let rec game_loop lobby_id lobbies client_set client_states () =
-  let rec loop clients =
-    match clients with
+  let loop = game_loop lobby_id lobbies client_set client_states in
+  let rec update_clients lobby =
+    match lobby with
     | [] -> []
     | c :: tail ->
         let client_id = get_client_id c in
@@ -153,42 +154,63 @@ let rec game_loop lobby_id lobbies client_set client_states () =
           get_client_state client_states client_id
         in
         if Game.Timer.game_over starting_time total_time then (
+          print_endline (string_of_int @@ Hashtbl.length client_set);
           Hashtbl.remove client_set client_id;
-          Hashtbl.remove client_states client_id;
-          send_client_message "Thanks for playing!" Quit |> ignore;
-          Ws.Server.close server c |> ignore;
-          loop tail)
-        else c :: loop tail
+          print_endline @@ "checks " ^ string_of_int client_id;
+          (let%lwt _ = send_client_message "Thanks for playing!" Quit in
+           print_endline @@ "sends message to "
+           ^ string_of_int client_id;
+           (* somehow closing client 2 affected sending messages to
+              client 1?? *)
+           Ws.Server.close server c)
+          |> ignore;
+          print_endline @@ "quits " ^ string_of_int client_id;
+          update_clients tail)
+        else c :: update_clients tail
   in
   let clients, starting_time = get_lobby lobbies lobby_id in
-  (* if List.length clients = 1 then ( send_message_to_client (List.hd
-     clients) "You're the last one standing!" Msg |> ignore; Thread.exit
-     ()) else *)
-  Hashtbl.replace lobbies lobby_id (loop clients, starting_time);
-  Thread.delay 0.2;
-  game_loop lobby_id lobbies client_set client_states ();
-  ()
+  if List.length clients <= 1 then (
+    check_game_status := false;
+    Thread.exit ())
+  else
+    let updated_clients = update_clients clients in
+    Hashtbl.replace lobbies lobby_id (updated_clients, starting_time);
+    Thread.delay 0.2;
+    loop ();
+    ()
 
 (* TODO: make this function to handle user input only instead *)
-let rec run_game client_set client_states lobbies client message =
-  Lwt.return ()
-(* let client_id = get_client_id client in let send_client_message =
-   send_message_to_client client in let starting_time =
-   get_starting_time client_states client_id lobbies in let combo_array,
-   score, comb, total_time = match Hashtbl.find_opt client_states
-   client_id with | Some (_, ca, s, c, t) -> (ca, s, c, t) | None ->
-   print_endline "Client not found: run_game"; failwith "" in let open
-   Game.Play in let open Game.Timer in let open Game.Combinations in let
-   open Game.Valid_solution_checker in let line = retrieve_combo comb
-   combo_array in send_client_message ("Current Score: " ^ string_of_int
-   score) Msg |> ignore; if Game.Timer.game_over starting_time
-   total_time then begin Hashtbl.remove client_set client_id;
-   send_client_message ("\nTimes up! Correct answer for " ^ line ^ "
-   is:\n " ^ (String.split_on_char ' ' line |> List.map int_of_string |>
-   Combinations.solution_to)) Msg |> ignore; send_client_message
-   ("Thanks for playing!\nFinal score: " ^ string_of_int score) Quit |>
-   ignore; Ws.Server.close server client end else send_client_message
-   ("Enter solution for: " ^ line ^ nums_to_cards line) Msg *)
+let run_game client_set client_states lobbies client message =
+  let client_id = get_client_id client in
+  let send_client_message = send_message_to_client client in
+  let print_client msg = send_message_to_client client msg Msg in
+  let starting_time =
+    get_starting_time client_states client_id lobbies
+  in
+  let combo_array, score, comb, total_time =
+    match Hashtbl.find_opt client_states client_id with
+    | Some (_, ca, s, c, t) -> (ca, s, c, t)
+    | None ->
+        print_endline "Client not found: run_game";
+        failwith ""
+  in
+  let time_left = Game.Timer.time_left starting_time total_time in
+  let open Game.Play in
+  let open Game.Combinations in
+  let open Game.Valid_solution_checker in
+  let line = retrieve_combo comb combo_array in
+  print_client @@ "Enter solution for: " ^ line ^ nums_to_cards line
+  |> ignore;
+  match message with
+  | "time" | "\"time\"" ->
+      (* this statement matches for 2 but not for 1 *)
+      print_endline "matching on time";
+      print_client "" |> ignore;
+      let time_left = time_left () |> string_of_int in
+      time_left ^ " seconds left!" |> print_client |> ignore;
+      print_client "" |> ignore;
+      Lwt.return ()
+  | _ -> failwith "unimplemented"
 
 (* In this context [message] refers to the message sent by client *)
 let rec handler client_set host_id client_states lobbies client message
@@ -265,7 +287,7 @@ and run_lobby
          List.fold_left
            (fun acc c ->
              Hashtbl.replace client_states (get_client_id c)
-               (lobby_id, combos, 0, "", 40))
+               (lobby_id, combos, 0, "", 10))
            () lobby);
         Thread.create
           (game_loop lobby_id lobbies client_set client_states)

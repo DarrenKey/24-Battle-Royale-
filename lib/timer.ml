@@ -32,8 +32,8 @@ let timer
         return ()),
     repeated_timer )
 
-let time_left starting_time total_time =
+let time_left starting_time total_time () =
   starting_time + total_time - int_of_float (Unix.time ())
 
 let game_over starting_time total_time =
-  time_left starting_time total_time <= 0
+  time_left starting_time total_time () <= 0
