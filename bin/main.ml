@@ -183,6 +183,9 @@ let rec game_loop lobby_id lobbies client_set client_states () =
 
 (* TODO: make this function to handle user input only instead *)
 let run_game lobby_id client_set client_states lobbies client message =
+  let open Game.Play in
+  let open Game.Combinations in
+  let open Game.Valid_solution_checker in
   let _ = print_endline "run_game run" in
   let client_id = get_client_id client in
   let print_client msg = send_message_to_client client msg Msg in
@@ -213,10 +216,31 @@ let run_game lobby_id client_set client_states lobbies client message =
         ("User " ^ string_of_client client ^ ": "
         ^ String.concat " " other_msg)
         Msg
+  | [ "repeat" ] ->
+      print_client @@ "Enter solution for: " ^ comb ^ nums_to_cards comb
+      |> ignore;
+      Lwt.return ()
+  | [ "skip" ] ->
+      let lobby_id, combo_array, score, comb, total_game_time =
+        Hashtbl.find client_states client_id
+      in
+      print_client @@ "Nice Attempt! Here's the solution: "
+      ^ (String.split_on_char ' ' comb
+        |> List.map int_of_string |> Combinations.solution_to)
+      |> ignore;
+      let new_score = if score - 1 > 0 then score - 1 else 0 in
+      let new_line = retrieve_combo "" combo_array in
+      print_client @@ "Current Score: " ^ string_of_int new_score
+      ^ "\nEnter solution for: " ^ new_line ^ nums_to_cards new_line
+      |> ignore;
+      Hashtbl.replace client_states client_id
+        (lobby_id, combo_array, new_score, new_line, total_game_time + 5)
+      |> ignore;
+      Lwt.return ()
+  | [ "score" ] ->
+      print_client @@ "Current Score: " ^ string_of_int score |> ignore;
+      Lwt.return ()
   | x -> (
-      let open Game.Play in
-      let open Game.Combinations in
-      let open Game.Valid_solution_checker in
       let lobby_id, combo_array, score, comb, total_game_time =
         Hashtbl.find client_states client_id
       in
@@ -235,6 +259,7 @@ let run_game lobby_id client_set client_states lobbies client message =
         | Correct ->
             let new_line = retrieve_combo "" combo_array in
             print_client @@ "Nice Job! Here's another one: " ^ new_line
+            ^ "\nCurrent Score: " ^ string_of_int score
             ^ nums_to_cards new_line
             |> ignore;
             Hashtbl.replace client_states client_id
@@ -246,13 +271,12 @@ let run_game lobby_id client_set client_states lobbies client message =
             |> ignore;
             Lwt.return ()
         | Incorrect ->
-            print_client
-            @@ "\nIncorrect, but nice attempt! Try again!\n"
+            print_client @@ "Incorrect, but nice attempt! Try again!"
             |> ignore;
             Lwt.return ()
         | Invalid ->
             print_client
-            @@ "\nInvalid input, but nice attempt! Try again!\n"
+            @@ "Invalid input, but nice attempt! Try again!"
             |> ignore;
             Lwt.return ())
 
