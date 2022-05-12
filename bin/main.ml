@@ -181,7 +181,7 @@ let rec game_loop lobby_id lobbies client_set client_states () =
     ()
 
 (* TODO: make this function to handle user input only instead *)
-let run_game client_set client_states lobbies client message =
+let run_game lobby_id client_set client_states lobbies client message =
   let _ = print_endline "run_game run" in
   let client_id = get_client_id client in
   let print_client msg = send_message_to_client client msg Msg in
@@ -195,26 +195,31 @@ let run_game client_set client_states lobbies client message =
         print_endline "Client not found: run_game";
         failwith ""
   in
-  let _ = print_endline "1" in
   let time_left = Game.Timer.time_left starting_time total_time in
-  let open Game.Play in
-  let open Game.Combinations in
-  let open Game.Valid_solution_checker in
-  let line = retrieve_combo comb combo_array in
-  let _ = print_endline "2" in
-  print_client @@ "Enter solution for: " ^ line ^ nums_to_cards line
-  |> ignore;
-  let _ = print_endline "3" in
+  let broadcast_client_message =
+    broadcast_message_to_lobby lobbies lobby_id
+  in
   (
-  match message with
-  | "time" | "\"time\"" ->
+  match String.split_on_char ' ' message with
+  | ["time"] ->
       (* this statement matches for 2 but not for 1 *)
       print_endline "matching on time";
         let time_left = time_left () |> string_of_int in
         let _ = print_endline time_left in
         let%lwt a = time_left ^ " seconds left!" |> print_client in 
         Lwt.return ()
-  | _ -> print_endline "4"; Lwt.return ()
+  | "msg" :: other_msg ->
+    broadcast_client_message
+      ("User " ^ string_of_client client ^ ": "
+      ^ String.concat " " other_msg)
+      Msg
+  | x -> 
+    let open Game.Play in
+    let open Game.Combinations in
+    let open Game.Valid_solution_checker in
+    let line = retrieve_combo comb combo_array in
+    print_client @@ "Enter solution for: " ^ line ^ nums_to_cards line
+    |> ignore; Lwt.return ()
   )
 
 (* In this context [message] refers to the message sent by client *)
@@ -255,7 +260,7 @@ let rec handler client_set host_id client_states lobbies client message
   let client_id = get_client_id client in
   let client_lobby_id = get_client_lobby_id client_states client_id in
   if !check_game_status then
-    run_game client_set client_states lobbies client message
+    run_game client_lobby_id client_set client_states lobbies client message
   else
     run_lobby client_lobby_id client_set host_id client_states lobbies
       client message
@@ -298,11 +303,11 @@ and run_lobby
              Hashtbl.replace client_states (get_client_id c)
                (lobby_id, combos, 0, "", 10))
            () lobby);
-        (* Thread.create
+        Thread.create
           (game_loop lobby_id lobbies client_set client_states)
           ()
-        |> ignore; *)
-        run_game client_set client_states lobbies client message)
+        |> ignore;
+        run_game lobby_id client_set client_states lobbies client message)
       else let%lwt _ = send_client_message "You are not the host!" Msg in 
       Lwt.return ()
   | [ "/quit" ] ->
