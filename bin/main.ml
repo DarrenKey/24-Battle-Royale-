@@ -8,7 +8,7 @@
 
     'Alert' -> Sends an alert such as a "You are the host" message
 
-    'Combos' -> Sends a set of 4 numbers the next line
+    'Problem' -> Sends a set of 4 numbers the next line
 
     'Score' -> Sends the player'scurrent score
 
@@ -18,7 +18,7 @@
 
 type client_command =
   | Alert
-  | Combos
+  | Problem
   | Score
   | Time
   | Num_in_lobby
@@ -87,7 +87,7 @@ let convert_command_to_string = function
   | Alert -> "Alert"
   | Msg -> "Msg"
   | Quit -> "Quit"
-  | Combos -> "Combos"
+  | Problem -> "Problem"
   | Score -> "Score"
   | Time -> "Time"
   | Num_in_lobby -> "Num_in_lobby"
@@ -199,7 +199,7 @@ let run_game lobby_id client_set client_states lobbies client message =
   let open Game.Play in
   let open Game.Combinations in
   let open Game.Valid_solution_checker in
-  let _ = print_endline "run_game run" in
+  let _ = print_endline @@ "run_game run|" ^ message in
   let client_id = get_client_id client in
   let print_client msg = send_message_to_client client msg Msg in
   let starting_time =
@@ -259,9 +259,8 @@ let run_game lobby_id client_set client_states lobbies client message =
       in
       if comb = "" then (
         let line = retrieve_combo comb combo_array in
-        print_client @@ "Enter solution for: " ^ line
-        ^ nums_to_cards line
-        |> ignore;
+        let _ = print_endline @@ line ^ "This run!" in
+        send_message_to_client client line Problem |> ignore;
         Hashtbl.replace client_states client_id
           (lobby_id, combo_array, score, line, total_game_time)
         |> ignore;
