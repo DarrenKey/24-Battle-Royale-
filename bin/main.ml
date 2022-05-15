@@ -1,12 +1,12 @@
 (** Protocol for sending messages to the client: Sending something to
-    the client involves two messages: (1st message): Command
+    the client involves sening first a command, then the message: (1st
+    message)|Command
 
     Valid Commands are: 'Msg' -> Send a message next line
 
-    'Quit' -> Invokes a command to quit, with a quitting message after
-    the line
+    'Quit' -> Invokes a command to quit with a quitting message
 
-    'Alert' -> Sends an alert next line, such as a "You are the host" message
+    'Alert' -> Sends an alert such as a "You are the host" message
 
     'Combos' -> Sends a set of 4 numbers the next line
 
@@ -14,9 +14,7 @@
 
     'Time' -> Sends the player's current time
 
-    "Num_in_lobby" -> Sends the number of people in the lobby currently
-
-    [2nd message] : Included message, either from "Msg" or "Quit" *)
+    "Num_in_lobby" -> Sends the number of people in the lobby currently *)
 
 type client_command =
   | Alert
@@ -109,11 +107,7 @@ let send_message_to_client client message (command : client_command) =
     | Time -> "Time"
     | Num_in_lobby -> "Num_in_lobby"
   in
-  let (p : bool Lwt.t), (r : bool Lwt.u) = Lwt.wait () in
-  let%lwt command_sent = Ws.Client.send client command in
-  let%lwt message_sent = Ws.Client.send client message in
-  Lwt.wakeup r true;
-  p
+  Ws.Client.send client (command ^ "|" ^ message)
 
 let rec run_start_setup server client_set client broadcast_message =
   failwith "run_start_setup deprecated"
@@ -175,6 +169,13 @@ let rec game_loop lobby_id lobbies client_set client_states () =
         let _, _, _, _, total_time =
           get_client_state client_states client_id
         in
+        (let%lwt _ =
+           send_client_message
+             (string_of_int
+             @@ Game.Timer.time_left starting_time total_time ())
+             Time
+         in
+         Lwt.return ());
         if Game.Timer.game_over starting_time total_time then (
           print_endline (string_of_int @@ Hashtbl.length client_set);
           Hashtbl.remove client_set client_id;
@@ -191,15 +192,13 @@ let rec game_loop lobby_id lobbies client_set client_states () =
         else c :: update_clients tail
   in
   let clients, starting_time = get_lobby lobbies lobby_id in
-  if List.length clients <= 1 then (
-    check_game_status := false;
-    Thread.exit ())
-  else
-    let updated_clients = update_clients clients in
-    Hashtbl.replace lobbies lobby_id (updated_clients, starting_time);
-    Thread.delay 0.2;
-    loop ();
-    ()
+  (* if List.length clients <= 1 then ( check_game_status := false;
+     Thread.exit ()) else *)
+  let updated_clients = update_clients clients in
+  Hashtbl.replace lobbies lobby_id (updated_clients, starting_time);
+  Thread.delay 0.2;
+  loop ();
+  ()
 
 (* TODO: make this function to handle user input only instead *)
 let run_game lobby_id client_set client_states lobbies client message =
@@ -279,7 +278,8 @@ let run_game lobby_id client_set client_states lobbies client message =
         | Correct ->
             let new_line = retrieve_combo "" combo_array in
             print_client @@ "Nice Job! Here's another one: " ^ new_line
-            ^ "\nCurrent Score: " ^ string_of_int (score + 1)
+            ^ "\nCurrent Score: "
+            ^ string_of_int (score + 1)
             ^ nums_to_cards new_line
             |> ignore;
             Hashtbl.replace client_states client_id
@@ -424,7 +424,7 @@ and run_lobby
       Lwt.return ()
   (* Parrots message ot everyone. Kept in for now as a debug measure *)
   | "msg" :: other_msg ->
-    broadcast_message server 
+      broadcast_message server
         ("User " ^ string_of_client client ^ ": "
         ^ String.concat " " other_msg)
         Msg
