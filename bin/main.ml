@@ -15,7 +15,7 @@ type client_command =
 let string_of_client client =
   client |> Ws.Client.id |> Ws.Client.Id.to_int |> string_of_int
 
-let server = Ws.Server.create ~port:3000
+let server = Ws.Server.create ~port:5000
 let get_client_id client = client |> Ws.Client.id |> Ws.Client.Id.to_int
 let check_game_status = ref false
 
@@ -259,7 +259,7 @@ let run_game lobby_id client_set client_states lobbies client message =
         | Correct ->
             let new_line = retrieve_combo "" combo_array in
             print_client @@ "Nice Job! Here's another one: " ^ new_line
-            ^ "\nCurrent Score: " ^ string_of_int score
+            ^ "\nCurrent Score: " ^ string_of_int (score + 1)
             ^ nums_to_cards new_line
             |> ignore;
             Hashtbl.replace client_states client_id
@@ -336,9 +336,6 @@ and run_lobby
   let client_id = get_client_id client in
   let lobby, _ = get_lobby lobbies lobby_id in
   let send_client_message = send_message_to_client client in
-  let broadcast_client_message =
-    broadcast_message_to_lobby lobbies lobby_id
-  in
   match String.split_on_char ' ' message with
   | [ "debug" ] -> Lwt.return ()
   | [ "on_connect" ] -> Lwt.return ()
@@ -406,8 +403,8 @@ and run_lobby
       in
       Lwt.return ()
   (* Parrots message ot everyone. Kept in for now as a debug measure *)
-  | other_msg ->
-      broadcast_client_message
+  | "msg" :: other_msg ->
+    broadcast_message server 
         ("User " ^ string_of_client client ^ ": "
         ^ String.concat " " other_msg)
         Msg
