@@ -81,32 +81,28 @@ let rec next_host client_set host_id : Ws.Client.t =
   | Some client -> client
   | None -> next_host client_set pos_host_id
 
+(* Converts a given command to the string name. For broadcasting +
+   sending purposes. *)
+let convert_command_to_string = function
+  | Alert -> "Alert"
+  | Msg -> "Msg"
+  | Quit -> "Quit"
+  | Combos -> "Combos"
+  | Score -> "Score"
+  | Time -> "Time"
+  | Num_in_lobby -> "Num_in_lobby"
+
 (* Broadcasts a message according to our new protocol. Takes in a
    message and command, sends command first then the message. *)
 
 let broadcast_message server message (command : client_command) =
-  let command =
-    match command with
-    | Msg -> "Msg"
-    | Quit -> "Quit"
-  in
-  let%lwt command_sent = Ws.Server.broadcast server command in
-  let%lwt message_sent = Ws.Server.broadcast server message in
-  Lwt.return ()
+  let command = convert_command_to_string command in
+  Ws.Server.broadcast server (command ^ "|" ^ message)
 
 (* Send a message according to our new protocol. Takes in a message and
    command, sends command first then the message. *)
 let send_message_to_client client message (command : client_command) =
-  let command =
-    match command with
-    | Alert -> "Alert"
-    | Msg -> "Msg"
-    | Quit -> "Quit"
-    | Combos -> "Combos"
-    | Score -> "Score"
-    | Time -> "Time"
-    | Num_in_lobby -> "Num_in_lobby"
-  in
+  let command = convert_command_to_string command in
   Ws.Client.send client (command ^ "|" ^ message)
 
 let rec run_start_setup server client_set client broadcast_message =
@@ -169,13 +165,11 @@ let rec game_loop lobby_id lobbies client_set client_states () =
         let _, _, _, _, total_time =
           get_client_state client_states client_id
         in
-        (let%lwt _ =
-           send_client_message
-             (string_of_int
-             @@ Game.Timer.time_left starting_time total_time ())
-             Time
-         in
-         Lwt.return ());
+        send_client_message
+          (string_of_int
+          @@ Game.Timer.time_left starting_time total_time ())
+          Time
+        |> ignore;
         if Game.Timer.game_over starting_time total_time then (
           print_endline (string_of_int @@ Hashtbl.length client_set);
           Hashtbl.remove client_set client_id;
