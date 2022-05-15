@@ -6,9 +6,24 @@
     'Quit' -> Invokes a command to quit, with a quitting message after
     the line
 
+    'Alert' -> Sends an alert next line, such as a "You are the host" message
+
+    'Combos' -> Sends a set of 4 numbers the next line
+
+    'Score' -> Sends the player'scurrent score
+
+    'Time' -> Sends the player's current time
+
+    "Num_in_lobby" -> Sends the number of people in the lobby currently
+
     [2nd message] : Included message, either from "Msg" or "Quit" *)
 
 type client_command =
+  | Alert
+  | Combos
+  | Score
+  | Time
+  | Num_in_lobby
   | Msg
   | Quit
 
@@ -39,11 +54,11 @@ let on_connect
       (host_id := get_client_id client;
        send_client_message
          "You're the host! Type /start to start the game.")
-        Msg
+        Alert
       |> ignore
     else
       send_client_message "Waiting for the host to start the game..."
-        Msg
+        Alert
       |> ignore;
     Hashtbl.add client_set (get_client_id client) client;
     let assigned_lobby = 0 in
@@ -86,8 +101,13 @@ let broadcast_message server message (command : client_command) =
 let send_message_to_client client message (command : client_command) =
   let command =
     match command with
+    | Alert -> "Alert"
     | Msg -> "Msg"
     | Quit -> "Quit"
+    | Combos -> "Combos"
+    | Score -> "Score"
+    | Time -> "Time"
+    | Num_in_lobby -> "Num_in_lobby"
   in
   let (p : bool Lwt.t), (r : bool Lwt.u) = Lwt.wait () in
   let%lwt command_sent = Ws.Client.send client command in
@@ -408,6 +428,7 @@ and run_lobby
         ("User " ^ string_of_client client ^ ": "
         ^ String.concat " " other_msg)
         Msg
+  | _ -> Lwt_io.printl "pattern match failed!"
 
 let () =
   let client_set : (int, Ws.Client.t) Hashtbl.t = Hashtbl.create 50 in
