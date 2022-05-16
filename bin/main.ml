@@ -96,7 +96,6 @@ let broadcast_message server message (command : client_command) =
    command, sends command first then the message. *)
 let send_message_to_client client message (command : client_command) =
   let command = convert_command_to_string command in
-  let _ = print_endline "should send a message" in
   Ws.Client.send client (command ^ "|" ^ message)
 
 let rec run_start_setup server client_set client broadcast_message =
@@ -112,7 +111,6 @@ let get_client_state client_states client_id =
 (* This function should somehow be run asynchronously, at every tick,
    after the game starts *)
 let rec game_loop client_set client_states starting_time () =
-  let loop = game_loop client_set client_states starting_time in
   let rec update_clients = function
     | [] -> []
     | c :: tail ->
@@ -126,32 +124,31 @@ let rec game_loop client_set client_states starting_time () =
           @@ Game.Timer.time_left starting_time total_time ())
           Time
         |> ignore;
-        let _ =
-          print_endline @@ string_of_int
-          @@ Game.Timer.time_left starting_time total_time ()
-        in
-        let _ = print_endline @@ string_of_int @@ client_id in
         if Game.Timer.game_over starting_time total_time then (
           print_endline (string_of_int @@ Hashtbl.length client_set);
           Hashtbl.remove client_set client_id;
           print_endline @@ "checks " ^ string_of_int client_id;
           (let%lwt _ = send_client_message "Thanks for playing!" Quit in
-           print_endline @@ "sends message to "
-           ^ string_of_int client_id;
-           (* somehow closing client 2 affected sending messages to
-              client 1?? *)
            Ws.Server.close server c)
           |> ignore;
-          print_endline @@ "quits " ^ string_of_int client_id;
+
           update_clients tail)
         else c :: update_clients tail
   in
-  (* if List.length clients <= 1 then ( check_game_status := false;
-     Thread.exit ()) else *)
-  let _ = update_clients (Ws.Server.clients server) in
-  Thread.delay 0.2;
-  loop ();
-  ()
+  let clients = Ws.Server.clients server in
+  let _ = print_endline "should stop game" in
+  check_game_status := false;
+  match clients with
+  | [] ->
+      print_endline "No clients!";
+      Lwt.return_unit
+  | [ c ] ->
+      let%lwt _ = send_message_to_client c "You won!" Alert in
+      Lwt.return ()
+  | _ ->
+      let%lwt _ = Lwt_unix.sleep time_interval in
+      let _ = update_clients clients in
+      game_loop client_set client_states starting_time ()
 
 (* TODO: make this function to handle user input only instead *)
 let run_game starting_time client_set client_states client message =
@@ -206,6 +203,17 @@ let run_game starting_time client_set client_states client message =
       Lwt.return ()
   | [ "score" ] ->
       print_client @@ "Current Score: " ^ string_of_int score |> ignore;
+      Lwt.return ()
+  | [ "/start" ] ->
+      let combo_array, score, comb, total_game_time =
+        Hashtbl.find client_states client_id
+      in
+      let line = retrieve_combo comb combo_array in
+      let _ = print_endline @@ line ^ "This run!" in
+      broadcast_client_message line Problem |> ignore;
+      Hashtbl.replace client_states client_id
+        (combo_array, score, line, total_game_time)
+      |> ignore;
       Lwt.return ()
   | x -> (
       let combo_array, score, comb, total_game_time =
@@ -309,10 +317,7 @@ and run_lobby
         Hashtbl.filter_map_inplace
           (fun acc c -> Some (combos, 0, "", 30))
           client_states;
-        Thread.create
-          (game_loop client_set client_states !starting_time)
-          ()
-        |> ignore;
+        game_loop client_set client_states !starting_time () |> ignore;
         run_game !starting_time client_set client_states client message)
       else
         let%lwt _ = send_client_message "You are not the host!" Msg in
