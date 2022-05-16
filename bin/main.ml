@@ -119,11 +119,8 @@ let rec game_loop client_set client_states starting_time () =
         let _, _, _, total_time =
           get_client_state client_states client_id
         in
-        send_client_message
-          (string_of_int
-          @@ Game.Timer.time_left starting_time total_time ())
-          Time
-        |> ignore;
+        (* send_client_message (string_of_int @@ Game.Timer.time_left
+           starting_time total_time ()) Time |> ignore; *)
         if Game.Timer.game_over starting_time total_time then (
           print_endline (string_of_int @@ Hashtbl.length client_set);
           Hashtbl.remove client_set client_id;
@@ -136,13 +133,12 @@ let rec game_loop client_set client_states starting_time () =
         else c :: update_clients tail
   in
   let clients = Ws.Server.clients server in
-  let _ = print_endline "should stop game" in
-  check_game_status := false;
   match clients with
   | [] ->
       print_endline "No clients!";
       Lwt.return_unit
   | [ c ] ->
+      check_game_status := false;
       let%lwt _ = send_message_to_client c "You won!" Alert in
       Lwt.return ()
   | _ ->
