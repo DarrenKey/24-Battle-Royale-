@@ -195,7 +195,7 @@ let run_game starting_time client_set client_states client message =
       ^ "\nEnter solution for: " ^ new_line ^ nums_to_cards new_line
       |> ignore;
       Hashtbl.replace client_states client_id
-        (combo_array, new_score, new_line, total_game_time - 5)
+        (combo_array, new_score, new_line, total_game_time + 5)
       |> ignore;
       Lwt.return ()
   | [ "score" ] ->
@@ -236,21 +236,6 @@ let run_game starting_time client_set client_states client message =
             send_message_to_client client new_line Problem |> ignore;
             Hashtbl.replace client_states client_id
               (combo_array, score + 1, new_line, total_game_time + 5)
-            |> ignore;
-            Hashtbl.iter
-              (fun k v ->
-                if client_id <> k then
-                  match v with
-                  | ( dif_combo_array,
-                      dif_score,
-                      dif_comb,
-                      dif_total_game_time ) ->
-                      Hashtbl.replace client_states k
-                        ( dif_combo_array,
-                          dif_score,
-                          dif_comb,
-                          dif_total_game_time - 5 ))
-              client_states
             |> ignore;
             Lwt.return ()
         | Incorrect ->

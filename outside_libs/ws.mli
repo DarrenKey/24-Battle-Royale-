@@ -1,3 +1,7 @@
+(** This is an outside library used to create a websocket server.
+
+    Source - https://github.com/roddyyaga/ws-server*)
+
 module Client : sig
   module Id : sig
     type t

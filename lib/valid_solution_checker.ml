@@ -39,16 +39,14 @@ let rec check_valid_paren (str : string) (paren_stack : char Stack.t) :
         check_valid_paren s_rest paren_stack
     | ']' ->
         if Stack.is_empty paren_stack then false
-        else
-          let top_elem = Stack.pop paren_stack in
-          if top_elem = '[' then check_valid_paren s_rest paren_stack
-          else false
+        else if Stack.pop paren_stack = '[' then
+          check_valid_paren s_rest paren_stack
+        else false
     | ')' ->
         if Stack.is_empty paren_stack then false
-        else
-          let top_elem = Stack.pop paren_stack in
-          if top_elem = '(' then check_valid_paren s_rest paren_stack
-          else false
+        else if Stack.pop paren_stack = '(' then
+          check_valid_paren s_rest paren_stack
+        else false
     | _ -> check_valid_paren s_rest paren_stack
 
 (* Makes certain that the operations in the input string are placed in
