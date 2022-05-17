@@ -6,17 +6,23 @@
 
     Precondition : solution given as a string without any spaces.*)
 
+(** operator is the type to represent the legal operations a user may
+    use in their solution. *)
 type operator =
   | Multiplication
   | Division
   | Addition
   | Subtraction
 
+(** solution_output are the possible outcomes of a solution a user may
+    input. *)
 type solution_output =
   | Invalid
   | Incorrect
   | Correct
 
+(** tree is a binary expression tree that can represent the expression a
+    user may input. *)
 type tree =
   | Leaf of int
   | Node of operator * tree * tree
@@ -28,12 +34,12 @@ type tree =
 val check_valid_char : string -> bool
 (** [check_valid_char s] checks if the solution [s] contains only valid
     characters. Valid characters are: -All numbers 0 - 9 -Operators +,
-    /, -, x or * -Parenthesis/Brackets [], () *)
+    /, -, x or * -Parenthesis/Brackets \[\], () *)
 
 val check_valid_paren : string -> char Stack.t -> bool
 (** [check_valid_paren str paren_stack] checks if the solution [s] has
     valid matching parenthesis using [paren_stack]. Legal parenthesis
-    are [] and (), but not {}. *)
+    are \[ \] and ( ), but not \{ \}. *)
 
 val check_valid_operations : string -> char -> bool
 (** [check_valid_operations s] checks if the solution [s] has valid
@@ -41,6 +47,8 @@ val check_valid_operations : string -> char -> bool
     division, - for subtraction, x or * for multipication. *)
 
 val add_back_nums : int -> int list -> int -> int list
+(** [add_back_nums elem nums dif_len] adds [elem] to [nums] [dif_len]-1
+    number of times. *)
 
 val check_all_nums_used_once : string -> int list -> bool
 (** [check_all_nums_used_once s lst] checks if the solution [s] has all
@@ -70,8 +78,15 @@ val expression_tree_creator : string -> tree
     Postcondition - returns a valid binary expression tree. *)
 
 val no_initial_paren : string -> string
+(** [no_initial_paren sol] is [sol] without unnecessary parenthesis. *)
+
 val strip_spaces : string -> string
+(** [strip_spaces sol] is [sol] without any blank spaces. *)
+
 val format_paren_multi : string -> string
+(** [format_paren_multi sol] is [sol] with extra multiplication
+    operations where necessary based on the parenthesis given by the
+    user. *)
 
 val check_expression_tree : tree -> bool
 (** [check_expression_tree t] checks whether or not the tree [t]

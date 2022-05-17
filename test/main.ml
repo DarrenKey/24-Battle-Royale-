@@ -1,10 +1,12 @@
-open OUnit2
 (** TEST PLAN
 
     We used OUnit testing to test our functions that generated our
     four-number combinations. We also used it for expression related
-    functions found in valid_solution_checker.ml. We also tested the
-    CombinationsImpl module.
+    functions that check the validity of a user input. Specifically, we
+    used OUnit to test the Combinations, Fraction, Postfix, and
+    Valid_solution_checker modules. These were tested either directly or
+    indirectly, using only a few overarching functions that used other
+    functions.
 
     We tested using mainly black box and a little bit of glass box
     testing, starting with basic test cases (ex. empty list, empty
@@ -12,8 +14,9 @@ open OUnit2
     new line character, etc).
 
     For the multiplayer related parts of our system, we manually tested
-    them. In the beginning, we used Postman to test our basic code using
-    new libraries. When we had more functionality with our system, we
+    them. Specifically, we manually tested the Play and Timer modules.
+    In the beginning, we used Postman to test our basic code using new
+    libraries. When we had more functionality with our system, we
     switched to testing directly using multiple terminals with each
     terminal used to simulate the server itself as well as the different
     clients. We then moved on to using a working website to test our
@@ -31,6 +34,7 @@ open OUnit2
     user-friendly our system was as well as what neccessary changes we
     needed to make. *)
 
+open OUnit2
 open Game
 open Combinations.CombinationsImpl
 open Valid_solution_checker

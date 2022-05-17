@@ -43,7 +43,6 @@ let eval_postfix rules tokens = eval_tokens_wrapper rules [] tokens
 
 exception NotValidPostFix
 
-(** Requires: [tokens] is a valid postfix representation. *)
 let postfix_to_infix tokens =
   let op_stack = Stack.create () in
   let rec main_loop token_list =

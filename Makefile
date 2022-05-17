@@ -29,5 +29,5 @@ clean:
 	dune clean
 	rm -f 24_battle_royale.zip
 
-doc:
+docs:
 	dune build @doc

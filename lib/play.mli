@@ -1,3 +1,6 @@
+(** Module to manage the interactions between the user and the
+    combinations. *)
+
 val combo_to_list : string -> int list
 (** [combo_to_list str] converts [str] into an int list.
 
