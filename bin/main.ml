@@ -29,18 +29,44 @@ let string_of_client client =
   client |> Ws.Client.id |> Ws.Client.Id.to_int |> string_of_int
 
 let server = Ws.Server.create ~port:5000
+
+(* Gets client_id as an int from the client. *)
 let get_client_id client = client |> Ws.Client.id |> Ws.Client.Id.to_int
+
+(* Checks if there exists any current clients. *)
+let exists_clients =
+  server |> Ws.Server.clients |> List.length |> ( < ) 0
+
+(* Gets a client that's currently connected via the client_id. *)
+let get_client_in_current_connections client_id =
+  List.fold_right
+    (fun client acc ->
+      match acc with
+      | Some x -> Some x
+      | None ->
+          if get_client_id client = client_id then Some client else None)
+    (Ws.Server.clients server)
+    None
+
+(* Gets the oldest client. *)
+let get_first_client =
+  let rec iter_client = function
+    | [] -> failwith "No clients in current connection!"
+    | [ x ] -> get_client_id x
+    | h :: t -> min (get_client_id h) (iter_client t)
+  in
+  server |> Ws.Server.clients |> iter_client
+  |> get_client_in_current_connections
+  |> function
+  | Some x -> x
+  | None -> failwith "No clients in current connection!"
+
 let check_game_status = ref false
 
 (* Interval for checking the time. *)
 let time_interval = 0.2
 
-let on_connect
-    client_set
-    host_id
-    client_states
-    client
-    send_client_message =
+let on_connect host_id client_states client send_client_message =
   if !check_game_status then begin
     send_client_message
       "Game has already started, please wait for the current game to \
@@ -49,30 +75,19 @@ let on_connect
     |> ignore;
     Ws.Server.close server client |> ignore
   end
-  else begin
-    if Hashtbl.length client_set = 0 then
-      (host_id := get_client_id client;
-       send_client_message
-         "You're the host! Type /start to start the game.")
-        Alert
-      |> ignore
-    else (
-      Hashtbl.add client_set (get_client_id client) client;
+  else if not exists_clients then begin
+    host_id := get_client_id client;
+    send_client_message
+      "You're the host! Type /start to start the game." Alert
+    |> ignore
+  end
+  else
+    begin
       send_client_message "Waiting for the host to start the game..."
         Alert
-      |> ignore);
-    let client_id = get_client_id client in
-    Hashtbl.add client_states client_id ([||], -1, "__INIT_COMBO", -1);
-    print_endline
-      ("added client " ^ string_of_int client_id ^ " to client_states")
-  end;
+      |> ignore
+    end;
   Lwt.return ()
-
-let rec next_host client_set host_id : Ws.Client.t =
-  let pos_host_id = host_id + 1 in
-  match Hashtbl.find_opt client_set pos_host_id with
-  | Some client -> client
-  | None -> next_host client_set pos_host_id
 
 (* Converts a given command to the string name. For broadcasting +
    sending purposes. *)
@@ -98,9 +113,6 @@ let send_message_to_client client message (command : client_command) =
   let command = convert_command_to_string command in
   Ws.Client.send client (command ^ "|" ^ message)
 
-let rec run_start_setup server client_set client broadcast_message =
-  failwith "run_start_setup deprecated"
-
 let get_client_state client_states client_id =
   match Hashtbl.find_opt client_states client_id with
   | Some (a, b, c, d) -> (a, b, c, d)
@@ -110,11 +122,11 @@ let get_client_state client_states client_id =
 
 (* This function should somehow be run asynchronously, at every tick,
    after the game starts *)
-let rec game_loop client_set client_states starting_time () =
+let rec game_loop client_states starting_time () =
   let rec update_clients = function
     | [] -> []
     | c :: tail ->
-        let client_id = Ws.Client.Id.to_int (Ws.Client.id c) in
+        let client_id = get_client_id c in
         let send_client_message = send_message_to_client c in
         let _, _, _, total_time =
           get_client_state client_states client_id
@@ -125,13 +137,9 @@ let rec game_loop client_set client_states starting_time () =
           Time
         |> ignore;
         if Game.Timer.game_over starting_time total_time then (
-          print_endline (string_of_int @@ Hashtbl.length client_set);
-          Hashtbl.remove client_set client_id;
-          print_endline @@ "checks " ^ string_of_int client_id;
           (let%lwt _ = send_client_message "Thanks for playing!" Quit in
            Ws.Server.close server c)
           |> ignore;
-
           update_clients tail)
         else c :: update_clients tail
   in
@@ -140,15 +148,16 @@ let rec game_loop client_set client_states starting_time () =
   | [] ->
       print_endline "No clients!";
       Lwt.return_unit
-  (* | [ c ] -> check_game_status := false; let%lwt _ =
-     send_message_to_client c "You won!" Alert in Lwt.return () *)
+  | [ c ] ->
+      check_game_status := false;
+      let%lwt _ = send_message_to_client c "You won!" Alert in
+      Lwt.return ()
   | _ ->
       let%lwt _ = Lwt_unix.sleep time_interval in
       let _ = update_clients clients in
-      game_loop client_set client_states starting_time ()
+      game_loop client_states starting_time ()
 
-(* TODO: make this function to handle user input only instead *)
-let run_game starting_time client_set client_states client message =
+let run_game starting_time client_states client message =
   let open Game.Play in
   let open Game.Combinations in
   let open Game.Valid_solution_checker in
@@ -250,19 +259,12 @@ let run_game starting_time client_set client_states client message =
             Lwt.return ())
 
 (* In this context [message] refers to the message sent by client *)
-let rec handler
-    client_set
-    host_id
-    client_states
-    starting_time
-    client
-    message =
+let rec handler host_id client_states starting_time client message =
   let _ = print_endline "handler run" in
   (let send_client_message = send_message_to_client client in
    match String.split_on_char ' ' message with
    | [ "on_connect" ] ->
-       on_connect client_set host_id client_states client
-         send_client_message
+       on_connect host_id client_states client send_client_message
    | [ "debug" ] ->
        let client_id = get_client_id client in
        let combo_array, score, comb, total_game_time =
@@ -283,18 +285,13 @@ let rec handler
    | _ -> Lwt.return ())
   |> ignore;
   if !check_game_status then
-    run_game !starting_time client_set client_states client message
-  else
-    run_lobby client_set host_id client_states starting_time client
-      message
+    run_game !starting_time client_states client message
+  else run_lobby host_id client_states starting_time client message
 
-and run_lobby
-    client_set
-    host_id
-    client_states
-    starting_time
-    client
-    message =
+and run_lobby host_id client_states starting_time client message =
+  let _ =
+    print_endline (string_of_int @@ Ws.Server.current_connections server)
+  in
   let _ = print_endline "run_lobby run" in
   let client_id = get_client_id client in
   let send_client_message = send_message_to_client client in
@@ -318,37 +315,22 @@ and run_lobby
         Hashtbl.filter_map_inplace
           (fun acc c -> Some (combos, 0, "", 30))
           client_states;
-        game_loop client_set client_states !starting_time () |> ignore;
-        run_game !starting_time client_set client_states client message)
+        game_loop client_states !starting_time () |> ignore;
+        run_game !starting_time client_states client message)
       else
         let%lwt _ = send_client_message "You are not the host!" Msg in
         Lwt.return ()
-  | [ "/quit" ] ->
-      Hashtbl.remove client_set client_id;
-      if
-        get_client_id client = !host_id
-        && Hashtbl.length client_set >= 1
-      then begin
-        let%lwt _ = send_client_message "Quit successfully" Quit in
-        Ws.Server.close server client |> ignore;
-        let new_host = next_host client_set !host_id in
-        host_id := get_client_id new_host;
-        let%lwt _ =
-          send_message_to_client new_host "You are now the new host!"
-            Msg
-        in
-        Lwt.return ()
-      end
-      else if
-        get_client_id client = !host_id && Hashtbl.length client_set = 0
-      then begin
-        check_game_status := false;
-        let%lwt _ = send_client_message "Quit successfully" Quit in
-        Ws.Server.close server client
-      end
-      else
-        let%lwt _ = send_client_message "Quit successfully" Quit in
-        Ws.Server.close server client
+  (* | [ "/quit" ] -> if get_client_id client = !host_id &&
+     exists_clients then begin let%lwt _ = send_client_message "Quit
+     successfully" Quit in Ws.Server.close server client |> ignore; let
+     new_host = next_host client_set !host_id in host_id :=
+     get_client_id new_host; let%lwt _ = send_message_to_client new_host
+     "You are now the new host!" Msg in Lwt.return () end else if
+     get_client_id client = !host_id && Hashtbl.length client_set = 0
+     then begin check_game_status := false; let%lwt _ =
+     send_client_message "Quit successfully" Quit in Ws.Server.close
+     server client end else let%lwt _ = send_client_message "Quit
+     successfully" Quit in Ws.Server.close server client *)
   | [ a; b; c; d; e ] when a = "evaluate" ->
       let%lwt _ =
         send_client_message
@@ -365,8 +347,12 @@ and run_lobby
         Msg
   | _ -> Lwt_io.printl "pattern match failed!"
 
+let handle_closing_connection client content =
+  print_endline
+    (Ws.Server.clients server |> List.length |> string_of_int);
+  Lwt.return_unit
+
 let () =
-  let client_set : (int, Ws.Client.t) Hashtbl.t = Hashtbl.create 50 in
   (* maps client ids to (combo_array, score, comb, total_game_time) *)
   let client_states : (int, string array * int * string * int) Hashtbl.t
       =
@@ -378,4 +364,5 @@ let () =
   let helper_connect temp = Lwt.return () in
   Lwt_main.run
     (Ws.Server.run server (Some helper_connect)
-       (handler client_set host_id client_states start_time))
+       ~on_close:handle_closing_connection
+       (handler host_id client_states start_time))

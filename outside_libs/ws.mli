@@ -1,5 +1,7 @@
 (** This is an outside library used to create a websocket server.
 
+    It has about 197 LOC.
+
     Source - https://github.com/roddyyaga/ws-server*)
 
 module Client : sig
