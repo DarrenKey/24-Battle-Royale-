@@ -56,11 +56,11 @@ let on_connect
          "You're the host! Type /start to start the game.")
         Alert
       |> ignore
-    else
+    else (
+      Hashtbl.add client_set (get_client_id client) client;
       send_client_message "Waiting for the host to start the game..."
         Alert
-      |> ignore;
-    Hashtbl.add client_set (get_client_id client) client;
+      |> ignore);
     let client_id = get_client_id client in
     Hashtbl.add client_states client_id ([||], -1, "__INIT_COMBO", -1);
     print_endline
@@ -119,8 +119,11 @@ let rec game_loop client_set client_states starting_time () =
         let _, _, _, total_time =
           get_client_state client_states client_id
         in
-        (* send_client_message (string_of_int @@ Game.Timer.time_left
-           starting_time total_time ()) Time |> ignore; *)
+        send_client_message
+          (string_of_int
+          @@ Game.Timer.time_left starting_time total_time ())
+          Time
+        |> ignore;
         if Game.Timer.game_over starting_time total_time then (
           print_endline (string_of_int @@ Hashtbl.length client_set);
           Hashtbl.remove client_set client_id;
@@ -137,10 +140,8 @@ let rec game_loop client_set client_states starting_time () =
   | [] ->
       print_endline "No clients!";
       Lwt.return_unit
-  | [ c ] ->
-      check_game_status := false;
-      let%lwt _ = send_message_to_client c "You won!" Alert in
-      Lwt.return ()
+  (* | [ c ] -> check_game_status := false; let%lwt _ =
+     send_message_to_client c "You won!" Alert in Lwt.return () *)
   | _ ->
       let%lwt _ = Lwt_unix.sleep time_interval in
       let _ = update_clients clients in
@@ -228,6 +229,10 @@ let run_game starting_time client_set client_states client message =
         match check_solution ans (combo_to_list comb) with
         | Correct ->
             let new_line = retrieve_combo "" combo_array in
+            send_message_to_client client
+              (string_of_int (score + 1))
+              Score
+            |> ignore;
             send_message_to_client client new_line Problem |> ignore;
             Hashtbl.replace client_states client_id
               (combo_array, score + 1, new_line, total_game_time + 5)
