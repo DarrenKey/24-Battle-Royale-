@@ -139,6 +139,10 @@ let valid_sol_tests =
     check_sol "8/[3-8/3] makes 24" "8/[3-8/3]" [ 3; 3; 8; 8 ] Correct;
     check_sol "3*10-4-2 makes 24" "3*10-4-2" [ 3; 10; 4; 2 ] Correct;
     check_sol "(5+2-3)*6 makes 24" "(5+2-3)*6 " [ 2; 3; 5; 6 ] Correct;
+    check_sol "[(5)+(2)-(3)]x6 makes 24" "[(5)+(2)-(3)]x6"
+      [ 5; 2; 3; 6 ] Correct;
+    check_sol "12(1+1/1) makes 24" "12(1+1/1)" [ 12; 1; 1; 1 ] Correct;
+    check_sol "1*1(2)(12) makes 24" "1*1(2)(12)" [ 1; 1; 2; 12 ] Correct;
   ]
 
 let imperfect_sol_tests =
@@ -174,6 +178,18 @@ let imperfect_sol_tests =
     check_sol "2+8+9+4 adds to 23" "2+8+9+4" [ 2; 8; 9; 4 ] Incorrect;
     check_sol "10/(2-2)+10 does not crash" "10/(2-2)+10"
       [ 10; 2; 2; 10 ] Incorrect;
+    check_sol "10--3+3+2 has an invalid operator" "10--3+3+2"
+      [ 10; 3; 3; 2 ] Invalid;
+    check_sol "Tab is not a valid input" "\t" [ 1; 2; 3; 4 ] Invalid;
+    check_sol "Mismatched braces/brackets/parentheses" "[9+([1+1)+1]"
+      [ 9; 1; 1; 1 ] Invalid;
+    check_sol "Intermingled braces/brackets/parentheses" "[9+(1+1]+1)"
+      [ 9; 1; 1; 1 ] Invalid;
+    check_sol "Invalid parenthesis placement" "9+(1+1+)1" [ 9; 1; 1; 1 ]
+      Invalid;
+    check_sol "Division by 0" "9/0" [ 9; 1; 1; 1 ] Invalid;
+    check_sol "9+1+1 1 is missing operators" "9+1+1 1" [ 9; 1; 1; 1 ]
+      Invalid;
   ]
 
 let suite =

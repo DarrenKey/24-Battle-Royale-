@@ -29,25 +29,36 @@ let rec check_valid_char (str : string) : bool =
    using a stack *)
 let rec check_valid_paren (str : string) (paren_stack : char Stack.t) :
     bool =
-  if str = "" then Stack.is_empty paren_stack
-  else
-    let s_first = String.get str 0 in
-    let s_rest = String.length str - 1 |> String.sub str 1 in
-    match s_first with
-    | '[' | '(' ->
-        Stack.push s_first paren_stack;
-        check_valid_paren s_rest paren_stack
-    | ']' ->
-        if Stack.is_empty paren_stack then false
-        else if Stack.pop paren_stack = '[' then
+  let rec paren_has_elem str =
+    if String.length str < 2 then true
+    else
+      let s_first = String.get str 0 in
+      let s_sec = String.get str 1 in
+      if (s_first = '(' || s_first = '[') && (s_sec = ')' || s_sec = ']')
+      then false
+      else paren_has_elem (String.length str - 2 |> String.sub str 2)
+  in
+  if paren_has_elem str then
+    if str = "" then Stack.is_empty paren_stack
+    else
+      let s_first = String.get str 0 in
+      let s_rest = String.length str - 1 |> String.sub str 1 in
+      match s_first with
+      | '[' | '(' ->
+          Stack.push s_first paren_stack;
           check_valid_paren s_rest paren_stack
-        else false
-    | ')' ->
-        if Stack.is_empty paren_stack then false
-        else if Stack.pop paren_stack = '(' then
-          check_valid_paren s_rest paren_stack
-        else false
-    | _ -> check_valid_paren s_rest paren_stack
+      | ']' ->
+          if Stack.is_empty paren_stack then false
+          else if Stack.pop paren_stack = '[' then
+            check_valid_paren s_rest paren_stack
+          else false
+      | ')' ->
+          if Stack.is_empty paren_stack then false
+          else if Stack.pop paren_stack = '(' then
+            check_valid_paren s_rest paren_stack
+          else false
+      | _ -> check_valid_paren s_rest paren_stack
+  else false
 
 (* Makes certain that the operations in the input string are placed in
    legal positions: between two numbers, between a number and a
