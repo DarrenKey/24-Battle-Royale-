@@ -25,6 +25,14 @@ type client_command =
   | Msg
   | Quit
 
+(* Record of client information *)
+type client_info = {
+  combo_array : string array;
+  score : int;
+  combo : string;
+  total_game_time : int;
+}
+
 let string_of_client client =
   client |> Ws.Client.id |> Ws.Client.Id.to_int |> string_of_int
 
@@ -33,9 +41,11 @@ let server = Ws.Server.create ~port:5000
 (* Gets client_id as an int from the client. *)
 let get_client_id client = client |> Ws.Client.id |> Ws.Client.Id.to_int
 
-(* Checks if there exists any current clients. *)
-let exists_clients =
-  server |> Ws.Server.clients |> List.length |> ( < ) 0
+(* Checks if there exists more than 0 current clients. *)
+let exists_clients () = server |> Ws.Server.current_connections > 0
+
+(* Checks if there exists more than 1 current clients. *)
+let exists_multiple () = server |> Ws.Server.current_connections > 1
 
 (* Gets a client that's currently connected via the client_id. *)
 let get_client_in_current_connections client_id =
@@ -48,12 +58,14 @@ let get_client_in_current_connections client_id =
     (Ws.Server.clients server)
     None
 
-(* Gets the oldest client. *)
-let get_first_client =
+(* Gets the oldest client that doesn't equal some client_id. *)
+let get_oldest_client_not_equal client_id_to_avoid =
   let rec iter_client = function
     | [] -> failwith "No clients in current connection!"
     | [ x ] -> get_client_id x
-    | h :: t -> min (get_client_id h) (iter_client t)
+    | h :: t when not (get_client_id h = client_id_to_avoid) ->
+        min (get_client_id h) (iter_client t)
+    | h :: t -> iter_client t
   in
   server |> Ws.Server.clients |> iter_client
   |> get_client_in_current_connections
@@ -75,7 +87,7 @@ let on_connect host_id client_states client send_client_message =
     |> ignore;
     Ws.Server.close server client |> ignore
   end
-  else if not exists_clients then begin
+  else if not @@ exists_multiple () then begin
     host_id := get_client_id client;
     send_client_message
       "You're the host! Type /start to start the game." Alert
@@ -113,12 +125,18 @@ let send_message_to_client client message (command : client_command) =
   let command = convert_command_to_string command in
   Ws.Client.send client (command ^ "|" ^ message)
 
-let get_client_state client_states client_id =
+let get_client_state
+    (client_states : (int, client_info) Hashtbl.t)
+    client_id =
   match Hashtbl.find_opt client_states client_id with
-  | Some (a, b, c, d) -> (a, b, c, d)
+  | Some { combo_array; score; combo; total_game_time } ->
+      { combo_array; score; combo; total_game_time }
   | None ->
       print_endline "Client not found: get_client_state";
       failwith ""
+
+(* Number of people in the server *)
+let get_num_in_server = server |> Ws.Server.current_connections
 
 (* This function should somehow be run asynchronously, at every tick,
    after the game starts *)
@@ -128,8 +146,9 @@ let rec game_loop client_states starting_time () =
     | c :: tail ->
         let client_id = get_client_id c in
         let send_client_message = send_message_to_client c in
-        let _, _, _, total_time =
-          get_client_state client_states client_id
+        let total_time =
+          match get_client_state client_states client_id with
+          | { total_game_time } -> total_game_time
         in
         send_client_message
           (string_of_int
@@ -157,7 +176,19 @@ let rec game_loop client_states starting_time () =
       let _ = update_clients clients in
       game_loop client_states starting_time ()
 
-let run_game starting_time client_states client message =
+let return_tuple client_states client_id =
+  match Hashtbl.find_opt client_states client_id with
+  | Some { total_game_time; score; combo_array; combo } ->
+      (combo_array, score, combo, total_game_time)
+  | None ->
+      print_endline "Client not found";
+      failwith ""
+
+let run_game
+    starting_time
+    (client_states : (int, client_info) Hashtbl.t)
+    client
+    message =
   let open Game.Play in
   let open Game.Combinations in
   let open Game.Valid_solution_checker in
@@ -165,11 +196,7 @@ let run_game starting_time client_states client message =
   let client_id = get_client_id client in
   let print_client msg = send_message_to_client client msg Msg in
   let combo_array, score, comb, total_time =
-    match Hashtbl.find_opt client_states client_id with
-    | Some (ca, s, c, t) -> (ca, s, c, t)
-    | None ->
-        print_endline "Client not found: run_game";
-        failwith ""
+    return_tuple client_states client_id
   in
   let time_left = Game.Timer.time_left starting_time total_time in
   let broadcast_client_message = broadcast_message server in
@@ -192,7 +219,7 @@ let run_game starting_time client_states client message =
       Lwt.return ()
   | [ "skip" ] ->
       let combo_array, score, comb, total_game_time =
-        Hashtbl.find client_states client_id
+        return_tuple client_states client_id
       in
       print_client @@ "Nice Attempt! Here's the solution: "
       ^ (String.split_on_char ' ' comb
@@ -204,7 +231,12 @@ let run_game starting_time client_states client message =
       ^ "\nEnter solution for: " ^ new_line ^ nums_to_cards new_line
       |> ignore;
       Hashtbl.replace client_states client_id
-        (combo_array, new_score, new_line, total_game_time + 5)
+        {
+          combo_array;
+          score = new_score;
+          combo = new_line;
+          total_game_time = total_game_time + 5;
+        }
       |> ignore;
       Lwt.return ()
   | [ "score" ] ->
@@ -212,25 +244,25 @@ let run_game starting_time client_states client message =
       Lwt.return ()
   | [ "/start" ] ->
       let combo_array, score, comb, total_game_time =
-        Hashtbl.find client_states client_id
+        return_tuple client_states client_id
       in
       let line = retrieve_combo comb combo_array in
       let _ = print_endline @@ line ^ "This run!" in
       broadcast_client_message line Problem |> ignore;
       Hashtbl.replace client_states client_id
-        (combo_array, score, line, total_game_time)
+        { combo_array; score; combo = line; total_game_time }
       |> ignore;
       Lwt.return ()
   | x -> (
       let combo_array, score, comb, total_game_time =
-        Hashtbl.find client_states client_id
+        return_tuple client_states client_id
       in
       if comb = "" then (
         let line = retrieve_combo comb combo_array in
         let _ = print_endline @@ line ^ "This run!" in
         send_message_to_client client line Problem |> ignore;
         Hashtbl.replace client_states client_id
-          (combo_array, score, line, total_game_time)
+          { combo_array; score; combo = line; total_game_time }
         |> ignore;
         Lwt.return ())
       else
@@ -244,7 +276,12 @@ let run_game starting_time client_states client message =
             |> ignore;
             send_message_to_client client new_line Problem |> ignore;
             Hashtbl.replace client_states client_id
-              (combo_array, score + 1, new_line, total_game_time + 5)
+              {
+                combo_array;
+                score = score + 1;
+                combo = new_line;
+                total_game_time = total_game_time + 5;
+              }
             |> ignore;
             Lwt.return ()
         | Incorrect ->
@@ -265,23 +302,24 @@ let rec handler host_id client_states starting_time client message =
    match String.split_on_char ' ' message with
    | [ "on_connect" ] ->
        on_connect host_id client_states client send_client_message
-   | [ "debug" ] ->
+   | [ "debug" ] -> (
        let client_id = get_client_id client in
-       let combo_array, score, comb, total_game_time =
-         get_client_state client_states client_id
-       in
-       print_endline ("starting_time: " ^ string_of_int !starting_time);
-       print_endline ("client_id: " ^ string_of_int client_id);
-       print_endline
-         ("combo_array: "
-         ^ Array.fold_left (fun acc x -> acc ^ x ^ ", ") "" combo_array
-         );
-       print_endline ("score: " ^ string_of_int score);
-       print_endline ("comb: " ^ comb);
-       print_endline
-         ("total_game_time: " ^ string_of_int total_game_time);
-       print_endline "";
-       Lwt.return ()
+       match get_client_state client_states client_id with
+       | { combo_array; combo; score; total_game_time } ->
+           print_endline
+             ("starting_time: " ^ string_of_int !starting_time);
+           print_endline ("client_id: " ^ string_of_int client_id);
+           print_endline
+             ("combo_array: "
+             ^ Array.fold_left
+                 (fun acc x -> acc ^ x ^ ", ")
+                 "" combo_array);
+           print_endline ("score: " ^ string_of_int score);
+           print_endline ("comb: " ^ combo);
+           print_endline
+             ("total_game_time: " ^ string_of_int total_game_time);
+           print_endline "";
+           Lwt.return ())
    | _ -> Lwt.return ())
   |> ignore;
   if !check_game_status then
@@ -313,7 +351,14 @@ and run_lobby host_id client_states starting_time client message =
         let _ = print_endline "got combos" in
         (* initialize every client in the current lobby *)
         Hashtbl.filter_map_inplace
-          (fun acc c -> Some (combos, 0, "", 30))
+          (fun acc c ->
+            Some
+              {
+                combo_array = combos;
+                score = 0;
+                combo = "";
+                total_game_time = 30;
+              })
           client_states;
         game_loop client_states !starting_time () |> ignore;
         run_game !starting_time client_states client message)
@@ -347,15 +392,23 @@ and run_lobby host_id client_states starting_time client message =
         Msg
   | _ -> Lwt_io.printl "pattern match failed!"
 
-let handle_closing_connection client content =
-  print_endline
-    (Ws.Server.clients server |> List.length |> string_of_int);
-  Lwt.return_unit
+let handle_closing_connection host_id client content =
+  let quitting_client_id = get_client_id client in
+  let _ = print_endline (string_of_int quitting_client_id ^ "test") in
+  if quitting_client_id = !host_id then (
+    (* Redo host *)
+    let new_host = get_oldest_client_not_equal quitting_client_id in
+    host_id := get_client_id new_host;
+    send_message_to_client new_host
+      "You are the new host! Type /start to begin." Alert)
+  else
+    broadcast_message server
+      (string_of_int get_num_in_server)
+      Num_in_lobby
 
 let () =
   (* maps client ids to (combo_array, score, comb, total_game_time) *)
-  let client_states : (int, string array * int * string * int) Hashtbl.t
-      =
+  let client_states : (int, client_info) Hashtbl.t =
     Hashtbl.create 50
   in
   (* the float represents the time at which the lobby started*)
@@ -364,5 +417,5 @@ let () =
   let helper_connect temp = Lwt.return () in
   Lwt_main.run
     (Ws.Server.run server (Some helper_connect)
-       ~on_close:handle_closing_connection
+       ~on_close:(handle_closing_connection host_id)
        (handler host_id client_states start_time))
