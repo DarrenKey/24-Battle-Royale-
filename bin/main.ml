@@ -78,38 +78,6 @@ let check_game_status = ref false
 (* Interval for checking the time. *)
 let time_interval = 0.2
 
-let on_connect host_id client_states client send_client_message =
-  if !check_game_status then begin
-    send_client_message
-      "Game has already started, please wait for the current game to \
-       end."
-      Quit
-    |> ignore;
-    Ws.Server.close server client
-  end
-  else
-    let client_id = get_client_id client in
-    Hashtbl.add client_states client_id
-      {
-        combo_array = [||];
-        score = -1;
-        combo = "__INIT_COMBO";
-        total_game_time = -1;
-      };
-    if not @@ exists_multiple () then begin
-      host_id := client_id;
-      send_client_message
-        "You're the host! Type /start to start the game." Alert
-      |> ignore
-    end
-    else
-      begin
-        send_client_message "Waiting for the host to start the game..."
-          Alert
-        |> ignore
-      end;
-    Lwt.return ()
-
 (* Converts a given command to the string name. For broadcasting +
    sending purposes. *)
 let convert_command_to_string = function
@@ -134,6 +102,41 @@ let send_message_to_client client message (command : client_command) =
   let command = convert_command_to_string command in
   Ws.Client.send client (command ^ "|" ^ message)
 
+let on_connect host_id client_states client send_client_message =
+  if !check_game_status then begin
+    send_client_message
+      "Game has already started, please wait for the current game to \
+       end."
+      Alert
+    |> ignore;
+    Ws.Server.close server client
+  end
+  else
+    let client_id = get_client_id client in
+    Hashtbl.add client_states client_id
+      {
+        combo_array = [||];
+        score = -1;
+        combo = "__INIT_COMBO";
+        total_game_time = -1;
+      };
+    if not @@ exists_multiple () then begin
+      host_id := client_id;
+      send_client_message
+        "You're the host! Type /start to start the game." Alert
+      |> ignore
+    end
+    else
+      begin
+        send_client_message "Waiting for the host to start the game..."
+          Alert
+        |> ignore
+      end;
+
+    broadcast_message server
+      (string_of_int @@ Ws.Server.current_connections server)
+      Num_in_lobby
+
 let get_client_state
     (client_states : (int, client_info) Hashtbl.t)
     client_id =
@@ -145,7 +148,7 @@ let get_client_state
       failwith ""
 
 (* Number of people in the server *)
-let get_num_in_server = server |> Ws.Server.current_connections
+let get_num_in_server () = server |> Ws.Server.current_connections
 
 (* This function should somehow be run asynchronously, at every tick,
    after the game starts *)
@@ -201,7 +204,7 @@ let run_game
   let open Game.Play in
   let open Game.Combinations in
   let open Game.Valid_solution_checker in
-  let _ = print_endline @@ "run_game run|" ^ message in
+  let _ = print_endline @@ "run_game run|" ^ message ^ "|" in
   let client_id = get_client_id client in
   let print_client msg = send_message_to_client client msg Msg in
   let combo_array, score, comb, total_time =
@@ -258,6 +261,7 @@ let run_game
       let line = retrieve_combo comb combo_array in
       let _ = print_endline @@ line ^ "This run!" in
       broadcast_client_message line Problem |> ignore;
+      broadcast_client_message "0" Score |> ignore;
       Hashtbl.replace client_states client_id
         { combo_array; score; combo = line; total_game_time }
       |> ignore;
@@ -331,9 +335,10 @@ let rec handler host_id client_states starting_time client message =
            Lwt.return ())
    | _ -> Lwt.return ())
   |> ignore;
-  if !check_game_status then
-    run_game !starting_time client_states client message
-  else run_lobby host_id client_states starting_time client message
+  if not !check_game_status then
+    run_lobby host_id client_states starting_time client message
+  else if message = "on_connect" then Lwt.return_unit
+  else run_game !starting_time client_states client message
 
 and run_lobby host_id client_states starting_time client message =
   let _ =
@@ -409,11 +414,11 @@ let handle_closing_connection host_id client content =
     let new_host = get_oldest_client_not_equal quitting_client_id in
     host_id := get_client_id new_host;
     send_message_to_client new_host
-      "You are the new host! Type /start to begin." Alert)
-  else
-    broadcast_message server
-      (string_of_int get_num_in_server)
-      Num_in_lobby
+      "You are the new host! Type /start to begin." Alert
+    |> ignore);
+  broadcast_message server
+    (string_of_int @@ get_num_in_server ())
+    Num_in_lobby
 
 let () =
   (* maps client ids to (combo_array, score, comb, total_game_time) *)
