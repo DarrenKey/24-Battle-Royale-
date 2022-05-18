@@ -178,6 +178,7 @@ let rec game_loop client_states starting_time () =
   match clients with
   | [] ->
       print_endline "No clients!";
+      check_game_status := false;
       Lwt.return_unit
   | [ c ] ->
       check_game_status := false;
@@ -370,7 +371,7 @@ and run_lobby host_id client_states starting_time client message =
                 combo_array = combos;
                 score = 0;
                 combo = "";
-                total_game_time = 30;
+                total_game_time = 60;
               })
           client_states;
         game_loop client_states !starting_time () |> ignore;
