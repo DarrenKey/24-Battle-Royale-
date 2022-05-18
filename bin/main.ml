@@ -400,7 +400,7 @@ and run_lobby host_id client_states starting_time client message =
         Msg
   | _ -> Lwt_io.printl "pattern match failed!"
 
-let handle_closing_connection host_id client content =
+let handle_closing_connection client_states host_id client content =
   let quitting_client_id = get_client_id client in
   let _ = print_endline (string_of_int quitting_client_id ^ "test") in
   if quitting_client_id = !host_id then (
@@ -410,6 +410,8 @@ let handle_closing_connection host_id client content =
     send_message_to_client new_host
       "You are the new host! Type /start to begin." Alert
     |> ignore);
+  if not @@ exists_multiple () then check_game_status := false;
+  Hashtbl.remove client_states quitting_client_id;
   broadcast_message server
     (string_of_int @@ get_num_in_server ())
     Num_in_lobby
@@ -425,5 +427,5 @@ let () =
   let helper_connect temp = Lwt.return () in
   Lwt_main.run
     (Ws.Server.run server (Some helper_connect)
-       ~on_close:(handle_closing_connection host_id)
+       ~on_close:(handle_closing_connection client_states host_id)
        (handler host_id client_states start_time))
