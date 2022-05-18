@@ -85,21 +85,30 @@ let on_connect host_id client_states client send_client_message =
        end."
       Quit
     |> ignore;
-    Ws.Server.close server client |> ignore
-  end
-  else if not @@ exists_multiple () then begin
-    host_id := get_client_id client;
-    send_client_message
-      "You're the host! Type /start to start the game." Alert
-    |> ignore
+    Ws.Server.close server client
   end
   else
-    begin
-      send_client_message "Waiting for the host to start the game..."
-        Alert
+    let client_id = get_client_id client in
+    Hashtbl.add client_states client_id
+      {
+        combo_array = [||];
+        score = -1;
+        combo = "__INIT_COMBO";
+        total_game_time = -1;
+      };
+    if not @@ exists_multiple () then begin
+      host_id := client_id;
+      send_client_message
+        "You're the host! Type /start to start the game." Alert
       |> ignore
-    end;
-  Lwt.return ()
+    end
+    else
+      begin
+        send_client_message "Waiting for the host to start the game..."
+          Alert
+        |> ignore
+      end;
+    Lwt.return ()
 
 (* Converts a given command to the string name. For broadcasting +
    sending purposes. *)
