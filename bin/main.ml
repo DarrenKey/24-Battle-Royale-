@@ -259,54 +259,48 @@ let run_game
         return_tuple client_states client_id
       in
       let line = retrieve_combo comb combo_array in
-      let _ = print_endline @@ line ^ "This run!" in
-      broadcast_client_message line Problem |> ignore;
-      broadcast_client_message "0" Score |> ignore;
-      Hashtbl.replace client_states client_id
-        { combo_array; score; combo = line; total_game_time }
+      (let _ = print_endline @@ line ^ "This run!" in
+       broadcast_client_message line Problem |> ignore;
+       broadcast_client_message "0" Score |> ignore;
+       (* initialize every client in the current lobby *)
+       Hashtbl.filter_map_inplace
+         (fun acc c ->
+           Some { combo_array; score; combo = line; total_game_time })
+         client_states)
       |> ignore;
       Lwt.return ()
   | x -> (
       let combo_array, score, comb, total_game_time =
         return_tuple client_states client_id
       in
-      if comb = "" then (
-        let line = retrieve_combo comb combo_array in
-        let _ = print_endline @@ line ^ "This run!" in
-        send_message_to_client client line Problem |> ignore;
-        Hashtbl.replace client_states client_id
-          { combo_array; score; combo = line; total_game_time }
-        |> ignore;
-        Lwt.return ())
-      else
-        let ans = List.fold_left (fun acc x -> acc ^ " " ^ x) "" x in
-        match check_solution ans (combo_to_list comb) with
-        | Correct ->
-            let new_line = retrieve_combo "" combo_array in
-            send_message_to_client client
-              (string_of_int (score + 1))
-              Score
-            |> ignore;
-            send_message_to_client client new_line Problem |> ignore;
-            Hashtbl.replace client_states client_id
-              {
-                combo_array;
-                score = score + 1;
-                combo = new_line;
-                total_game_time = total_game_time + 5;
-              }
-            |> ignore;
-            Lwt.return ()
-        | Incorrect ->
-            send_message_to_client client
-              "Incorrect, but nice attempt! Try again!" Problem
-            |> ignore;
-            Lwt.return ()
-        | Invalid ->
-            send_message_to_client client
-              "Invalid input, but nice attempt! Try again!" Problem
-            |> ignore;
-            Lwt.return ())
+      let ans = List.fold_left (fun acc x -> acc ^ " " ^ x) "" x in
+      match check_solution ans (combo_to_list comb) with
+      | Correct ->
+          let new_line = retrieve_combo "" combo_array in
+          send_message_to_client client
+            (string_of_int (score + 1))
+            Score
+          |> ignore;
+          send_message_to_client client new_line Problem |> ignore;
+          Hashtbl.replace client_states client_id
+            {
+              combo_array;
+              score = score + 1;
+              combo = new_line;
+              total_game_time = total_game_time + 5;
+            }
+          |> ignore;
+          Lwt.return ()
+      | Incorrect ->
+          send_message_to_client client
+            "Incorrect, but nice attempt! Try again!" Problem
+          |> ignore;
+          Lwt.return ()
+      | Invalid ->
+          send_message_to_client client
+            "Invalid input, but nice attempt! Try again!" Problem
+          |> ignore;
+          Lwt.return ())
 
 (* In this context [message] refers to the message sent by client *)
 let rec handler host_id client_states starting_time client message =
@@ -356,7 +350,7 @@ and run_lobby host_id client_states starting_time client message =
   | [ "/start" ] ->
       if !host_id = client_id then (
         check_game_status := true;
-        ignore (broadcast_message server "Game starting!" Msg);
+        ignore (broadcast_message server "Game started!" Alert);
         starting_time := int_of_float @@ Unix.time ();
         let in_channel =
           open_in ("assets" ^ Filename.dir_sep ^ "combos.txt")
