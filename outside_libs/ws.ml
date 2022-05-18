@@ -77,8 +77,15 @@ module Server = struct
       let open Websocket_lwt_unix in
       establish_server
         ~mode:(`TCP (`Port port))
+        ~on_exn:(fun exn ->
+          match exn with
+          | Websocket.Protocol_error x ->
+              print_endline
+                "Likely someone tried to make an http request..."
+          | _ -> print_endline "Another error happened...")
         ~check_request:(fun _ -> true)
         (fun connected_client ->
+          let _ = print_endline "connected" in
           let%lwt () = Lwt_mutex.lock next_id_lock in
           let client_id = !next_id in
           next_id := client_id + 1;
