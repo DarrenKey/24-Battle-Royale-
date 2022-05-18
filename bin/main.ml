@@ -226,28 +226,27 @@ let run_game
         ^ String.concat " " other_msg)
         Msg
   | [ "repeat" ] ->
-      print_client @@ "Enter solution for: " ^ comb ^ nums_to_cards comb
-      |> ignore;
+      send_message_to_client client comb Problem |> ignore;
       Lwt.return ()
   | [ "skip" ] ->
       let combo_array, score, comb, total_game_time =
         return_tuple client_states client_id
       in
-      print_client @@ "Nice Attempt! Here's the solution: "
-      ^ (String.split_on_char ' ' comb
-        |> List.map int_of_string |> Combinations.solution_to)
+      send_message_to_client client
+        ("Nice Attempt! Here's a solution: "
+        ^ (String.split_on_char ' ' comb
+          |> List.map int_of_string |> Combinations.solution_to))
+        Problem
       |> ignore;
       let new_score = if score - 1 > 0 then score - 1 else 0 in
       let new_line = retrieve_combo "" combo_array in
-      print_client @@ "Current Score: " ^ string_of_int new_score
-      ^ "\nEnter solution for: " ^ new_line ^ nums_to_cards new_line
-      |> ignore;
+      send_message_to_client client new_line Problem |> ignore;
       Hashtbl.replace client_states client_id
         {
           combo_array;
           score = new_score;
           combo = new_line;
-          total_game_time = total_game_time + 5;
+          total_game_time;
         }
       |> ignore;
       Lwt.return ()
