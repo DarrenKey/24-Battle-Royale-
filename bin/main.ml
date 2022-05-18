@@ -250,7 +250,7 @@ let run_game
           total_game_time;
         }
       |> ignore;
-      Lwt.return ()
+      send_message_to_client client (string_of_int new_score) Score
   | [ "score" ] ->
       print_client @@ "Current Score: " ^ string_of_int score |> ignore;
       Lwt.return ()
